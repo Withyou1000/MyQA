@@ -1,0 +1,179 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue",
+			"^GlobalNotification": "@/components/GlobalNotification.vue"
+		}
+	},
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "问答",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/login/index",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/register/index",
+			"style": {
+				"navigationBarTitleText": "注册"
+			}
+		},
+		{
+			"path": "pages/question/detail",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/chat/index",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/message/index",
+			"style": {
+				"navigationBarTitleText": "消息中心"
+			}
+		},
+		{
+			"path": "pages/ask/index",
+			"style": {
+				"navigationBarTitleText": "提问"
+			}
+		},
+		{
+			"path": "pages/profile/index",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/profile/my-questions",
+			"style": {
+				"navigationBarTitleText": "我的提问"
+			}
+		},
+		{
+			"path": "pages/profile/my-answers",
+			"style": {
+				"navigationBarTitleText": "我的回答"
+			}
+		},
+		{
+			"path": "pages/profile/vip",
+			"style": {
+				"navigationBarTitleText": "开通会员"
+			}
+		},
+		{
+			"path": "pages/profile/application-list",
+			"style": {
+				"navigationBarTitleText": "申请列表"
+			}
+		},
+		{
+			"path": "pages/profile/user-detail",
+			"style": {
+				"navigationBarTitleText": "用户详情",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/profile/rating",
+			"style": {
+				"navigationBarTitleText": "评价体验"
+			}
+		},
+		{
+			"path": "pages/profile/rating-detail",
+			"style": {
+				"navigationBarTitleText": "评价详情"
+			}
+		},
+		{
+			"path": "pages/profile/refund",
+			"style": {
+				"navigationBarTitleText": "申请退款",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/profile/refund-detail",
+			"style": {
+				"navigationBarTitleText": "退款详情",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/profile/edit-profile",
+			"style": {
+				"navigationBarTitleText": "编辑资料",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/customer-service/index",
+			"style": {
+				"navigationBarTitleText": "客服工作台",
+				"navigationBarBackgroundColor": "#007aff",
+				"navigationBarTextStyle": "white"
+			}
+		}
+	],
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#007AFF",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "black",
+		"fontSize": "12px",
+		"iconWidth": "24px",
+		"spacing": "3px",
+		"height": "50px",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "问答",
+				"iconPath": "/static/images/tab-question.svg",
+				"selectedIconPath": "/static/images/tab-question-active.svg"
+			},
+			{
+				"pagePath": "pages/ask/index",
+				"text": "提问",
+				"iconPath": "/static/images/tab-ask.svg",
+				"selectedIconPath": "/static/images/tab-ask-active.svg"
+			},
+			{
+				"pagePath": "pages/message/index",
+				"text": "消息",
+				"iconPath": "/static/images/tab-message.svg",
+				"selectedIconPath": "/static/images/tab-message-active.svg"
+			},
+			{
+				"pagePath": "pages/profile/index",
+				"text": "我的",
+				"iconPath": "/static/images/tab-profile.svg",
+				"selectedIconPath": "/static/images/tab-profile-active.svg"
+			}
+		]
+	},
+	
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "",
+		"navigationBarBackgroundColor": "#FFFFFF",
+		"backgroundColor": "#F7F7F7"
+	}
+}

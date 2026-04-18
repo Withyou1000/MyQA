@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+
+uni-qa(front)/node_modules/
+uni-qa(front)/dist/
+uni-qa(front)/.env
+
+uni-qa(back)/node_modules/
+uni-qa(back)/.env
+uni-qa(back)/public/uploads/
