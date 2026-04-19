@@ -1,103 +1,110 @@
 <template>
-  <view class="my-questions">
-    <view class="question-list">
-      <view v-for="(question, index) in questions" :key="index" class="question-item"
-        @click="goToQuestionDetail(question)">
-        <view class="question-header">
-          <text class="title">{{ question.title }}</text>
-          <text class="reward">{{ question.reward }}元</text>
+  <view class="my-questions-page">
+    <view class="hero-card">
+      <view class="hero-copy">
+        <text class="hero-eyebrow">My Questions</text>
+        <text class="hero-title">我的提问</text>
+        <text class="hero-desc">管理你发出的每一个问题，看看它们现在走到了哪一步。</text>
+      </view>
+      <view class="hero-stat">
+        <text class="hero-stat-value">{{ questions.length }}</text>
+        <text class="hero-stat-label">总问题数</text>
+      </view>
+    </view>
+
+    <view class="summary-row" v-if="questions.length">
+      <view class="summary-pill">
+        <text class="summary-label">待处理</text>
+        <text class="summary-value">{{ getCountByStatus("pending") }}</text>
+      </view>
+      <view class="summary-pill">
+        <text class="summary-label">回答中</text>
+        <text class="summary-value">{{ getCountByStatus("answering") }}</text>
+      </view>
+      <view class="summary-pill">
+        <text class="summary-label">已完成</text>
+        <text class="summary-value">{{ getFinishedCount() }}</text>
+      </view>
+    </view>
+
+    <view class="question-list" v-if="questions.length">
+      <view
+        v-for="question in questions"
+        :key="question.id"
+        class="question-card"
+        @click="goToQuestionDetail(question)"
+      >
+        <view class="question-top">
+          <view class="question-meta">
+            <text class="topic-chip">{{ question.topic || "未分类" }}</text>
+            <text class="time-text">{{ formatDate(question.createTime) }}</text>
+          </view>
+          <text class="reward-pill">{{ question.reward }}元</text>
         </view>
+
+        <text class="title">{{ question.title }}</text>
+
         <view class="tags-container">
-          <text class="tag topic-tag">{{ question.topic }}</text>
-          <text v-for="(tag, tagIndex) in question.tags" :key="tagIndex" class="tag">{{ tag }}</text>
+          <text v-for="(tag, tagIndex) in question.tags || []" :key="tagIndex" class="tag">{{ tag }}</text>
         </view>
+
         <view class="question-footer">
-          <text class="status" :class="question.status">{{
-            question.statusText
-          }}</text>
+          <text class="status-pill" :class="question.status">{{ question.statusText }}</text>
           <view class="action-buttons">
-            <!-- 待处理状态 -->
             <template v-if="question.status === 'pending'">
-              <button class="btn apply-btn relative" @click.stop="goToApplicationList(question)">
+              <button class="btn warm relative" @click.stop="goToApplicationList(question)">
                 申请列表
                 <view v-if="question.applicationCount > 0" class="red-dot">
-                  <text class="dot-number">{{
-                    question.applicationCount
-                  }}</text>
+                  <text class="dot-number">{{ question.applicationCount }}</text>
                 </view>
               </button>
-              <button class="btn cancel-btn" @click.stop="cancelQuestion(question)">
-                取消提问
-              </button>
+              <button class="btn danger" @click.stop="cancelQuestion(question)">取消提问</button>
             </template>
 
-            <!-- 解答中状态 -->
             <template v-else-if="question.status === 'answering'">
-              <button class="btn refund-btn" @click.stop="applyRefund(question)">
-                申请退款
-              </button>
-              <button class="btn contact-btn" @click.stop="contactUser(question)">
-                联系对方
-              </button>
-              <button class="btn complete-btn" @click.stop="completeQuestion(question)">
-                已完成
-              </button>
+              <button class="btn light" @click.stop="applyRefund(question)">申请退款</button>
+              <button class="btn success" @click.stop="completeQuestion(question)">已完成</button>
+                <button class="btn primary" @click.stop="contactUser(question)">联系对方</button>
             </template>
 
-            <!-- 退款中状态 -->
             <template v-else-if="question.status === 'refunding'">
-              <button class="btn refund-btn" @click.stop="cancelRefund(question)">
-                取消申请
-              </button>
-              <button class="btn contact-btn" @click.stop="contactUser(question)">
-                联系对方
-              </button>
+              <button class="btn light" @click.stop="cancelRefund(question)">取消申请</button>
+              <button class="btn primary" @click.stop="contactUser(question)">联系对方</button>
             </template>
 
-            <!-- 已采纳状态 -->
             <template v-else-if="question.status === 'accepted' || question.status === 'rated'">
-              <button class="btn contact-btn" @click.stop="contactUser(question)">
-                联系对方
+              <button
+                class="btn success"
+                @click.stop="question.status === 'rated' ? viewRating(question) : goToReview(question)"
+              >
+                {{ question.status === "rated" ? "查看评价" : "去评价" }}
               </button>
-              <button class="btn review-btn"
-                @click.stop="question.status === 'rated' ? viewRating(question) : goToReview(question)">
-                {{ question.status === 'rated' ? '查看评价' : '去评价' }}
-              </button>
+              <button class="btn primary" @click.stop="contactUser(question)">联系对方</button>
             </template>
 
-            <!-- 已拒绝状态 -->
             <template v-else-if="question.status === 'rejected'">
-              <button class="btn contact-btn" @click.stop="contactUser(question)">
-                联系对方
-              </button>
-              <button class="btn appeal-btn" @click.stop="appealQuestion(question)">
-                申述
-              </button>
-              <button class="btn edit-btn" @click.stop="editQuestion(question)">
-                编辑
-              </button>
+              <button class="btn light" @click.stop="appealQuestion(question)">申诉</button>
+              <button class="btn peach" @click.stop="editQuestion(question)">编辑</button>
+               <button class="btn primary" @click.stop="contactUser(question)">联系对方</button>
             </template>
-            
-            <!-- 已退款状态 -->
+
             <template v-else-if="question.status === 'refunded'">
-              <button class="btn contact-btn" @click.stop="contactUser(question)">
-                联系对方
-              </button>
+              <button class="btn primary" @click.stop="contactUser(question)">联系对方</button>
             </template>
           </view>
         </view>
       </view>
     </view>
 
-    <!-- 暂无数据提示 -->
-    <view class="empty-tip" v-if="questions.length === 0">
-      <text>暂无提问记录</text>
+    <view class="empty-card" v-else>
+      <text class="empty-title">还没有提问记录</text>
+      <text class="empty-desc">去发布一个问题吧，答案和连接都会慢慢来到这里。</text>
     </view>
   </view>
 </template>
 
 <script setup>
-import { onShow } from '@dcloudio/uni-app'
+import { onShow } from "@dcloudio/uni-app";
 import { ref, onMounted } from "vue";
 import { userApi } from "@/api/common";
 import { applyApi } from "@/api";
@@ -105,69 +112,39 @@ import { refundApi } from "@/api/refund";
 import { chatApi } from "@/api/chat";
 import { questionApi } from "@/api/question";
 
-// 模拟数据
-const questions = ref([
-  {
-    id: 1,
-    title: "如何使用Vue3的Composition API？",
-    topic: "编程",
-    tags: ["Vue3", "前端"],
-    reward: 20,
-    status: "accepted",
-    statusText: "已采纳",
-  },
-  {
-    id: 2,
-    title: "MySQL索引优化技巧",
-    topic: "编程",
-    tags: ["MySQL", "数据库"],
-    reward: 35,
-    status: "pending",
-    statusText: "待处理",
-  },
-  {
-    id: 3,
-    title: "Android开发如何接收通知",
-    topic: "移动开发",
-    tags: ["Android", "Java"],
-    reward: 50,
-    status: "answering",
-    statusText: "解答中",
-  },
-  {
-    id: 4,
-    title: "React性能优化方法",
-    topic: "前端",
-    tags: ["React", "性能优化"],
-    reward: 30,
-    status: "rejected",
-    statusText: "已拒绝",
-  },
-]);
+const questions = ref([]);
 const loading = ref(false);
-// 新增：页面来源标志
-// const fromApplicationList = ref(false);
 
-// 在statusMap中添加已评价状态
 const statusMap = {
   pending: "待处理",
-  answering: "解答中",
+  answering: "回答中",
   accepted: "已采纳",
   rejected: "已拒绝",
   rated: "已评价",
   refunding: "退款中",
-  refunded: "已退款"
+  refunded: "已退款",
 };
 
+const formatDate = (value) => {
+  if (!value) return "刚刚";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "最近";
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+};
 
-// 添加查看评价方法
+const getCountByStatus = (status) => questions.value.filter((item) => item.status === status).length;
+
+const getFinishedCount = () =>
+  questions.value.filter((item) => ["accepted", "rated", "refunded"].includes(item.status)).length;
+
 const viewRating = (question) => {
   uni.navigateTo({
     url: `/pages/profile/rating-detail?questionId=${question.id}`,
   });
 };
 
-// 获取我的提问列表
 const loadQuestions = async () => {
   try {
     loading.value = true;
@@ -180,7 +157,7 @@ const loadQuestions = async () => {
       tags: item.tags,
       reward: item.reward,
       status: item.status,
-      statusText: statusMap[item.status],
+      statusText: statusMap[item.status] || "进行中",
       createTime: item.createTime,
     }));
   } catch (error) {
@@ -193,7 +170,6 @@ const loadQuestions = async () => {
   }
 };
 
-// 联系对方
 const contactUser = async (question) => {
   const res = await userApi.hasRelate(question.id);
   if (res.data.hasRelate) {
@@ -208,23 +184,20 @@ const contactUser = async (question) => {
   }
 };
 
-// 申请退款
 const applyRefund = (question) => {
   uni.showModal({
     title: "申请退款",
     content: `确定要申请${question.reward}元退款吗？`,
     success: (res) => {
       if (res.confirm) {
-        // 跳转到退款申请页面
         uni.navigateTo({
-          url: `/pages/profile/refund?question=${JSON.stringify(question)}`
+          url: `/pages/profile/refund?question=${JSON.stringify(question)}`,
         });
       }
     },
   });
 };
 
-// 取消退款申请
 const cancelRefund = async (question) => {
   uni.showModal({
     title: "取消退款",
@@ -232,27 +205,23 @@ const cancelRefund = async (question) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          // 调用取消退款API
           await refundApi.cancelRefund(question.id);
-          
-          // 调用聊天接口发送取消退款系统消息
           await chatApi.sendChatMessage(question.id, {
             messageType: "refund_system",
-             text: "我取消了退款申请&咱们合作继续"
+            text: "我取消了退款申请，我们继续合作",
           });
-          
+
           uni.showToast({
             title: "退款申请已取消",
             icon: "success",
           });
-          
-          // 刷新问题列表
+
           loadQuestions();
         } catch (error) {
-          console.error('取消退款申请失败:', error);
+          console.error("取消退款申请失败:", error);
           uni.showToast({
-            title: error.message || '取消失败，请重试',
-            icon: 'none'
+            title: error.message || "取消失败，请重试",
+            icon: "none",
           });
         }
       }
@@ -260,32 +229,26 @@ const cancelRefund = async (question) => {
   });
 };
 
-// 去评价
 const goToReview = (question) => {
   uni.navigateTo({
     url: `/pages/profile/rating?questionId=${question.id}`,
   });
 };
 
-// 编辑问题
 const editQuestion = (question) => {
   uni.navigateTo({
     url: `/pages/ask/index?questionId=${question.id}&edit=true`,
   });
 };
 
-
-
-// 申述
-const appealQuestion = (question) => {
+const appealQuestion = () => {
   uni.showModal({
-    title: "申述",
-    content: "确定要对该问题进行申述吗？",
+    title: "申诉",
+    content: "确定要对该问题进行申诉吗？",
     success: (res) => {
       if (res.confirm) {
-        // 调用申述API
         uni.showToast({
-          title: "申述已提交",
+          title: "申诉已提交",
           icon: "success",
         });
       }
@@ -293,11 +256,10 @@ const appealQuestion = (question) => {
   });
 };
 
-// 已完成
 const completeQuestion = (question) => {
   uni.showModal({
     title: "确认完成",
-    content: "确定该问题已解决吗？",
+    content: "确定该问题已经解决了吗？",
     success: async (res) => {
       if (res.confirm) {
         try {
@@ -318,7 +280,6 @@ const completeQuestion = (question) => {
   });
 };
 
-// 撤销问题（删除问题）
 const cancelQuestion = (question) => {
   uni.showModal({
     title: "撤销问题",
@@ -326,21 +287,19 @@ const cancelQuestion = (question) => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          // 调用删除问题API
           await questionApi.deleteQuestion(question.id);
-          
+
           uni.showToast({
             title: "问题已撤销",
             icon: "success",
           });
-          
-          // 刷新问题列表
+
           loadQuestions();
         } catch (error) {
-          console.error('撤销问题失败:', error);
+          console.error("撤销问题失败:", error);
           uni.showToast({
-            title: error.message || '撤销失败，请重试',
-            icon: 'none'
+            title: error.message || "撤销失败，请重试",
+            icon: "none",
           });
         }
       }
@@ -348,37 +307,18 @@ const cancelQuestion = (question) => {
   });
 };
 
-// 页面加载时获取数据
 onMounted(() => {
   loadQuestions();
 });
 
-// 页面显示时处理
 onShow(() => {
-  // 如果是从申请列表页面返回的，则刷新数据
-  // if (fromApplicationList.value) {
   loadQuestions();
-  // fromApplicationList.value = false; // 重置标志
-  // }
 });
 
-// 下拉刷新
-const onPullDownRefresh = async () => {
-  await loadQuestions();
-  uni.stopPullDownRefresh();
-};
-
-// 跳转到申请列表 - 确保此函数在script setup中正确定义
 const goToApplicationList = (question) => {
-  // 新增：页面来源标志
-  // fromApplicationList.value = true;
-  console.log("跳转到申请列表，问题ID:", question.id); // 添加日志以便调试
   try {
     uni.navigateTo({
       url: `/pages/profile/application-list?questionId=${question.id}`,
-      success: () => {
-        console.log("跳转成功");
-      },
       fail: (err) => {
         console.error("跳转失败:", err);
         uni.showToast({
@@ -396,7 +336,6 @@ const goToApplicationList = (question) => {
   }
 };
 
-// 添加跳转到问题详情页的函数
 const goToQuestionDetail = (question) => {
   uni.navigateTo({
     url: `/pages/question/detail?questionId=${question.id}&fromIndex=false`,
@@ -405,202 +344,318 @@ const goToQuestionDetail = (question) => {
 </script>
 
 <style lang="scss" scoped>
-.my-questions {
+.my-questions-page {
   min-height: 100vh;
-  background-color: #f7f7f7;
+  padding: 24rpx;
+  background: var(--app-page-bg);
+}
+
+.hero-card {
+  display: flex;
+  gap: 22rpx;
+  padding: 34rpx 30rpx;
+  border-radius: 32rpx;
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
+  box-shadow: var(--app-shadow-soft);
+}
+
+.hero-copy {
+  flex: 1;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-surface-alt);
+  border: 1rpx solid var(--app-card-border);
+  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+}
+
+.hero-title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.hero-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--app-hero-text) 84%, #ffffff);
+  opacity: 1;
+}
+
+.hero-stat {
+  width: 156rpx;
+  min-height: 156rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface-alt);
+  border: 1rpx solid var(--app-card-border);
+  backdrop-filter: blur(12rpx);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-stat-value {
+  font-size: 54rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hero-stat-label {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
+}
+
+.summary-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.summary-pill {
+  flex: 1;
   padding: 20rpx;
+  border-radius: 24rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+}
 
-  .question-list {
-    .question-item {
-      background-color: #fff;
-      border-radius: 12rpx;
-      padding: 24rpx;
-      margin-bottom: 20rpx;
-      display: flex;
-      flex-direction: column;
-      gap: 16rpx;
-      box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+.summary-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
+}
 
-      .question-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        width: 100%;
+.summary-value {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--app-ink);
+}
 
-        .title {
-          font-size: 32rpx;
-          color: #333;
-          line-height: 1.4;
-          flex: 1;
-          margin-right: 20rpx;
-          font-weight: 500;
-        }
+.question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  margin-top: 22rpx;
+}
 
-        .reward {
-          font-size: 30rpx;
-          color: #ff6b6b;
-          font-weight: bold;
-          min-width: 80rpx;
-          text-align: right;
-        }
-      }
+.question-card {
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+}
 
-      .tags-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10rpx;
-        margin: 8rpx 0;
+.question-top,
+.question-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
 
-        .tag {
-          font-size: 24rpx;
-          color: #666;
-          background: #f5f5f5;
-          padding: 4rpx 16rpx;
-          border-radius: 4rpx;
-          height: 44rpx;
-          line-height: 44rpx;
+.question-meta {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex-wrap: wrap;
+}
 
-          &.topic-tag {
-            color: #ff6b6b;
-            background: rgba(255, 107, 107, 0.1);
-          }
-        }
-      }
+.topic-chip,
+.reward-pill,
+.tag,
+.status-pill {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
 
-      .question-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        margin-top: 8rpx;
+.topic-chip {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
 
-        .status {
-          font-size: 26rpx;
-          padding: 4rpx 12rpx;
-          border-radius: 4rpx;
+.time-text {
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
+}
 
-          &.pending {
-            color: #ff9500;
-            background: rgba(255, 149, 0, 0.1);
-          }
+.reward-pill {
+  background: var(--app-success-bg);
+  color: var(--app-success-text);
+  font-weight: 600;
+}
 
-          &.answering {
-            color: #007aff;
-            background: rgba(0, 122, 255, 0.1);
-          }
+.title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 32rpx;
+  line-height: 1.6;
+  font-weight: 600;
+  color: var(--app-ink);
+}
 
-          &.accepted {
-            color: #34c759;
-            background: rgba(52, 199, 89, 0.1);
-          }
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
 
-          &.rejected {
-            color: #ff3b30;
-            background: rgba(255, 59, 48, 0.1);
-          }
+.tag {
+  background: var(--app-surface-soft);
+  color: var(--app-ink-soft);
+}
 
-          &.refunded {
-            color: #34c759;
-            background: rgba(52, 199, 89, 0.1);
-          }
-        }
+.question-footer {
+  margin-top: 22rpx;
+  align-items: flex-start;
+}
 
-        .action-buttons {
-          display: flex;
-          gap: 12rpx;
-          justify-content: flex-end;
-          flex-wrap: wrap;
+.status-pill.pending {
+  background: var(--app-warning-bg);
+  color: var(--app-warning-text);
+}
 
-          .btn {
-            height: 64rpx;
-            line-height: 64rpx;
-            text-align: center;
-            border-radius: 32rpx;
-            font-size: 26rpx;
-            padding: 0 24rpx;
-            margin: 0;
-            min-width: 140rpx;
+.status-pill.answering {
+  background: var(--app-info-bg);
+  color: var(--app-info-text);
+}
 
-            &.contact-btn {
-              background-color: #007aff;
-              color: #fff;
-            }
+.status-pill.accepted,
+.status-pill.rated,
+.status-pill.refunded {
+  background: var(--app-success-bg);
+  color: var(--app-success-text);
+}
 
-            &.apply-btn {
-              background-color: #ff9500;
-              color: #fff;
-            }
+.status-pill.rejected {
+  background: var(--app-danger-bg);
+  color: var(--app-danger-text);
+}
 
-            &.refund-btn {
-              background-color: #ff3b30;
-              color: #fff;
-            }
+.status-pill.refunding {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
 
-            &.review-btn {
-              background-color: #34c759;
-              color: #fff;
-            }
+.action-buttons {
+  display: flex;
+  gap: 12rpx;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
 
-            &.edit-btn {
-              background-color: #5ac8fa;
-              color: #fff;
-            }
+.btn {
+  height: 64rpx;
+  line-height: 64rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  padding: 0 24rpx;
+  margin: 0;
+  min-width: 140rpx;
+  background: var(--app-surface-soft);
+  color: var(--app-ink);
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
 
-            &.complete-btn {
-              background-color: #34c759;
-              color: #fff;
-            }
+.btn::after {
+  border: none;
+}
 
-            &.appeal-btn {
-              background-color: #5ac8fa;
-              color: #fff;
-            }
+.btn.primary {
+  background: var(--app-primary-gradient);
+  color: #fff;
+}
 
-            &.cancel-btn {
-              background-color: #ff3b30;
-              color: #fff;
-            }
+.btn.success {
+  background: rgba(131, 208, 184, 0.2);
+  color: #279979;
+}
 
-            &.relative {
-              position: relative;
-              // 增加这个属性确保按钮不会裁剪溢出内容
-              overflow: visible;
+.btn.light {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
 
-              .red-dot {
-                position: absolute;
-                top: -12rpx;
-                right: -12rpx;
-                width: 40rpx;
-                height: 40rpx;
-                background-color: #ff3b30;
-                border-radius: 50%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 999; // 使用更高的z-index
-                box-shadow: 0 2rpx 6rpx rgba(255, 59, 48, 0.4); // 添加阴影增加可见性
-              }
+.btn.danger {
+  background: var(--app-danger-bg);
+  color: var(--app-danger-text);
+}
 
-              .red-dot .dot-number {
-                color: #fff;
-                font-size: 24rpx;
-                font-weight: bold;
-                line-height: 40rpx;
-                text-align: center;
-                min-width: 40rpx;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+.btn.warm {
+  background: var(--app-warning-bg);
+  color: var(--app-warning-text);
+}
 
-  .empty-tip {
-    padding: 100rpx 0;
-    text-align: center;
-    color: #999;
-    font-size: 28rpx;
-  }
+.btn.peach {
+  background: rgba(255, 196, 157, 0.22);
+  color: #b96c31;
+}
+
+.btn.relative {
+  position: relative;
+  overflow: visible;
+}
+
+.red-dot {
+  position: absolute;
+  top: -12rpx;
+  right: -10rpx;
+  min-width: 38rpx;
+  height: 38rpx;
+  padding: 0 8rpx;
+  background: #f26a7a;
+  border-radius: 999rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 8rpx 18rpx rgba(242, 106, 122, 0.24);
+}
+
+.dot-number {
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.empty-card {
+  margin-top: 24rpx;
+  padding: 90rpx 40rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+  text-align: center;
+}
+
+.empty-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.empty-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: var(--app-ink-muted);
 }
 </style>

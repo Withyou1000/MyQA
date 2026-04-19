@@ -4,8 +4,60 @@ const authMiddleware = require('../middleware/auth');
 const CustomerServiceSessionModel = require('../models/CustomerServiceSessionModel');
 const CustomerServiceMessageModel = require('../models/CustomerServiceMessageModel');
 const CustomerServiceRequestModel = require('../models/CustomerServiceRequestModel');
+const QuestionModel = require('../models/QuestionModel');
+const ChatModel = require('../models/ChatModel');
+const RefundModel = require('../models/RefundModel');
 const UserModel = require('../models/UserModel');
 const socketService = require('../services/socket');
+
+function getDisplayName(user) {
+  if (!user) return '';
+  return user.name || user.account || '匿名用户';
+}
+
+function getAvatar(user) {
+  return user?.avatar || '';
+}
+
+function buildTransactionSnapshot(question, currentUserId, refundMap = new Map()) {
+  if (!question || !question.author || !question.answerer) return null;
+
+  const questionId = question._id.toString();
+  const isAsker = question.author._id.toString() === currentUserId.toString();
+  const otherUser = isAsker ? question.answerer : question.author;
+  const refund = refundMap.get(questionId);
+
+  return {
+    questionId,
+    title: question.title || '',
+    topic: question.topic || '',
+    tags: question.tags || [],
+    reward: question.reward || 0,
+    status: question.status || 'pending',
+    createTime: question.createTime,
+    role: isAsker ? 'asker' : 'answerer',
+    otherUser: {
+      userId: otherUser?._id || '',
+      name: getDisplayName(otherUser),
+      avatar: getAvatar(otherUser)
+    },
+    refund: refund
+      ? {
+          status: refund.status,
+          amount: refund.amount,
+          applyTime: refund.applyTime
+        }
+      : null
+  };
+}
+
+function getLastMessagePreview(messageType, text, transactionInfo) {
+  if (messageType === 'image') return '[图片]';
+  if (messageType === 'transaction') {
+    return `[交易] ${transactionInfo?.title || '交易咨询'}`;
+  }
+  return text || '';
+}
 
 /**
  * 获取客服会话列表
@@ -85,6 +137,7 @@ router.get('/chat/:customerId', authMiddleware, async (req, res) => {
           text: msg.text,
           image: msg.image,
           messageType: msg.messageType,
+          transactionInfo: msg.transactionInfo || null,
           senderId: msg.senderId,
           receiverId: msg.receiverId,
           createdAt: msg.createdAt,
@@ -108,11 +161,26 @@ router.get('/chat/:customerId', authMiddleware, async (req, res) => {
 router.post('/message/:customerId', authMiddleware, async (req, res) => {
   try {
     const { customerId } = req.params;
-    const { text, image, messageType } = req.body;
+    const { text, image, messageType, transactionInfo } = req.body;
     const userId = req.user.userId;
     const role = req.user.role;
     const senderId = userId;
     let receiverId = null;
+    const normalizedTransactionInfo =
+      messageType === 'transaction' && transactionInfo
+        ? {
+            questionId: String(transactionInfo.questionId || ''),
+            title: transactionInfo.title || '',
+            topic: transactionInfo.topic || '',
+            tags: Array.isArray(transactionInfo.tags) ? transactionInfo.tags : [],
+            reward: Number(transactionInfo.reward || 0),
+            status: transactionInfo.status || 'pending',
+            createTime: transactionInfo.createTime || null,
+            role: transactionInfo.role || '',
+            otherUser: transactionInfo.otherUser || null,
+            refund: transactionInfo.refund || null
+          }
+        : null;
 
 
     // // 验证是否为客服角色
@@ -154,7 +222,7 @@ router.post('/message/:customerId', authMiddleware, async (req, res) => {
     //如果会话激活，存在客服，更新会话的最后消息
     if (session) {
       // 更新会话的最后消息
-      session.lastMessage = messageType === 'text' ? text : '[图片]';
+      session.lastMessage = getLastMessagePreview(messageType, text, normalizedTransactionInfo);
       session.lastMessageTime = new Date();
       if (userId.toString() === customerId.toString()) {
         session.unreadCount += Array.isArray(image) ? image.length : 1;
@@ -175,6 +243,7 @@ router.post('/message/:customerId', authMiddleware, async (req, res) => {
           text: text || '',
           image: img,
           messageType,
+          transactionInfo: normalizedTransactionInfo,
           senderId,
           receiverId,
           isRead: true
@@ -188,7 +257,8 @@ router.post('/message/:customerId', authMiddleware, async (req, res) => {
             messageId: msg._id,
             text: text || '',
             image: img,
-            messageType
+            messageType,
+            transactionInfo: normalizedTransactionInfo
           });
         }
       }
@@ -202,6 +272,7 @@ router.post('/message/:customerId', authMiddleware, async (req, res) => {
         text: text || '',
         image: image || '',
         messageType,
+        transactionInfo: normalizedTransactionInfo,
         senderId,
         receiverId,
         isRead: true
@@ -222,7 +293,8 @@ router.post('/message/:customerId', authMiddleware, async (req, res) => {
           messageId: message._id,
           text: typeof text === 'string' ? text : '',
           image: image || '',
-          messageType
+          messageType,
+          transactionInfo: normalizedTransactionInfo
         });
       }
     }
@@ -249,6 +321,150 @@ router.post('/message/:customerId', authMiddleware, async (req, res) => {
  * 标记会话为已读
  * PUT /api/customer-service/session/:sessionId/read
  */
+/**
+ * 获取当前用户最近的问答交易
+ * GET /api/customer-service/transactions/recent
+ */
+router.get('/transactions/recent', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const questions = await QuestionModel.find({
+      $or: [{ author: userId }, { answerer: userId }],
+      answerer: { $ne: null }
+    })
+      .populate('author', 'account name avatar')
+      .populate('answerer', 'account name avatar')
+      .sort({ createTime: -1 })
+      .limit(20);
+
+    const refunds = await RefundModel.find({
+      questionId: { $in: questions.map((item) => item._id) }
+    }).select('questionId status amount applyTime');
+
+    const refundMap = new Map(
+      refunds.map((refund) => [refund.questionId.toString(), refund])
+    );
+
+    res.status(200).json({
+      code: 200,
+      data: questions
+        .map((question) => buildTransactionSnapshot(question, userId, refundMap))
+        .filter(Boolean)
+    });
+  } catch (error) {
+    console.error('获取最近交易失败:', error);
+    res.status(500).json({
+      code: 500,
+      message: '获取最近交易失败'
+    });
+  }
+});
+
+/**
+ * 获取交易详情
+ * GET /api/customer-service/transaction/:questionId/detail
+ */
+router.get('/transaction/:questionId/detail', authMiddleware, async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const userId = req.user.userId;
+    const role = req.user.role;
+
+    const question = await QuestionModel.findById(questionId)
+      .populate('author', 'account name avatar')
+      .populate('answerer', 'account name avatar');
+
+    if (!question) {
+      return res.status(404).json({
+        code: 404,
+        message: '问题不存在'
+      });
+    }
+
+    const isParticipant =
+      question.author?._id?.toString() === userId.toString() ||
+      question.answerer?._id?.toString() === userId.toString();
+
+    if (role !== 'customer_service' && !isParticipant) {
+      return res.status(403).json({
+        code: 403,
+        message: '没有权限查看该交易详情'
+      });
+    }
+
+    const [chatMessages, refund] = await Promise.all([
+      ChatModel.find({ questionId }).sort({ createTime: 1 }),
+      RefundModel.findOne({ questionId }).sort({ applyTime: -1 })
+    ]);
+
+    const authorId = question.author?._id?.toString() || '';
+    const answererId = question.answerer?._id?.toString() || '';
+
+    res.status(200).json({
+      code: 200,
+      data: {
+        question: {
+          questionId: question._id,
+          title: question.title || '',
+          topic: question.topic || '',
+          tags: question.tags || [],
+          reward: question.reward || 0,
+          images: question.images || [],
+          status: question.status || 'pending',
+          createTime: question.createTime,
+          author: question.author
+            ? {
+                userId: question.author._id,
+                name: getDisplayName(question.author),
+                avatar: getAvatar(question.author)
+              }
+            : null,
+          answerer: question.answerer
+            ? {
+                userId: question.answerer._id,
+                name: getDisplayName(question.answerer),
+                avatar: getAvatar(question.answerer)
+              }
+            : null
+        },
+        chatMessages: chatMessages.map((message) => ({
+          messageId: message._id,
+          text: message.text || '',
+          image: message.image || '',
+          messageType: message.messageType,
+          createTime: message.createTime,
+          senderRole:
+            message.senderId.toString() === authorId
+              ? 'asker'
+              : message.senderId.toString() === answererId
+                ? 'answerer'
+                : 'system'
+        })),
+        refund: refund
+          ? {
+              refundId: refund._id,
+              amount: refund.amount,
+              reason: refund.reason,
+              description: refund.description,
+              proofs: refund.proofs || [],
+              status: refund.status,
+              applyTime: refund.applyTime,
+              processTime: refund.processTime,
+              processRemark: refund.processRemark || ''
+            }
+          : null
+      }
+    });
+  } catch (error) {
+    console.error('获取交易详情失败:', error);
+    res.status(500).json({
+      code: 500,
+      message: '获取交易详情失败'
+    });
+  }
+});
+
 router.put('/session/:sessionId/read', authMiddleware, async (req, res) => {
   try {
     const { sessionId } = req.params;

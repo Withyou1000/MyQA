@@ -51,6 +51,29 @@ export const customerServiceApi = {
   },
 
   /**
+   * 获取当前用户最近的交易列表
+   * @returns {Promise<Array>}
+   */
+  getRecentTransactions() {
+    return request({
+      url: '/customer-service/transactions/recent',
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 获取交易详情
+   * @param {string} questionId - 问题ID
+   * @returns {Promise<Object>}
+   */
+  getTransactionDetail(questionId) {
+    return request({
+      url: `/customer-service/transaction/${questionId}/detail`,
+      method: 'GET'
+    })
+  },
+
+  /**
    * 发送消息给客户
    * @param {string} customerId - 客户ID
    * @param {Object} message - 消息内容

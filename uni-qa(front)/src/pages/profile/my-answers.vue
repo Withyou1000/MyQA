@@ -1,143 +1,122 @@
 <template>
-  <view class="my-answers">
-    <view class="answer-list">
-      <view
-        v-for="(answer, index) in answers"
-        :key="index"
-        class="answer-item"
-        @click="goToQuestionDetail(answer.id)"
+  <view class="my-answers-page">
+    <view class="hero-card">
+      <view class="hero-copy">
+        <text class="hero-eyebrow">My Answers</text>
+        <text class="hero-title">我的回答</text>
+        <text class="hero-desc">这里会记录你参与过的问题，也能快速回到聊天和详情。</text>
+      </view>
+      <view class="hero-stat">
+        <text class="hero-stat-value">{{ answers.length }}</text>
+        <text class="hero-stat-label">总回答数</text>
+      </view>
+    </view>
 
+    <view class="summary-row" v-if="answers.length">
+      <view class="summary-pill">
+        <text class="summary-label">待处理</text>
+        <text class="summary-value">{{ getCountByStatus("pending") }}</text>
+      </view>
+      <view class="summary-pill">
+        <text class="summary-label">回答中</text>
+        <text class="summary-value">{{ getCountByStatus("answering") }}</text>
+      </view>
+      <view class="summary-pill">
+        <text class="summary-label">已完成</text>
+        <text class="summary-value">{{ getDoneCount() }}</text>
+      </view>
+    </view>
+
+    <view class="answer-list" v-if="answers.length">
+      <view
+        v-for="answer in answers"
+        :key="answer.id"
+        class="answer-card"
+        @click="goToQuestionDetail(answer.id)"
       >
-        <view class="question-header">
-          <text class="title">{{ answer.title }}</text>
-          <text class="reward">{{ answer.reward }}元</text>
+        <view class="answer-top">
+          <view class="answer-meta">
+            <text class="topic-chip">{{ answer.topic || "未分类" }}</text>
+            <text class="time-text">{{ formatDate(answer.createTime) }}</text>
+          </view>
+          <text class="reward-pill">{{ answer.reward }}元</text>
         </view>
+
+        <text class="title">{{ answer.title }}</text>
+
         <view class="tags-container">
-          <text class="tag topic-tag">{{ answer.topic }}</text>
-          <text
-            v-for="(tag, tagIndex) in answer.tags"
-            :key="tagIndex"
-            class="tag"
-            >{{ tag }}</text
-          >
+          <text v-for="(tag, tagIndex) in answer.tags || []" :key="tagIndex" class="tag">{{ tag }}</text>
         </view>
-        <view class="question-footer">
-          <text class="status" :class="answer.status">{{
-            answer.statusText
-          }}</text>
+
+        <view class="answer-footer">
+          <text class="status-pill" :class="answer.status">{{ answer.statusText }}</text>
           <view class="action-buttons">
-            <!-- 解答中状态 -->
-            <template v-if="answer.status !== 'pending'">
-              <button
-                class="btn contact-btn"
-                @click.stop="goToChat(answer)"
-              >
-                联系对方
-              </button>
+            <template v-if="answer.status === 'rejected'">
+              <button class="btn light" @click.stop="appealAnswer(answer)">申诉</button>
+                  <button class="btn primary" @click.stop="goToChat(answer)">联系对方</button>
             </template>
 
-            <!-- 已拒绝状态 -->
-            <template v-else-if="answer.status === 'rejected'">
-              <button
-                class="btn contact-btn"
-                @click.stop="contactUser(answer)"
-              >
-                联系对方
-              </button>
-               <button
-                class="btn appeal-btn"
-                @click.stop="appealAnswer(answer)"
-              >
-                申述
-              </button>
+            <template v-else-if="answer.status !== 'pending' && answer.status !== 'refused'">
+              <button class="btn primary" @click.stop="goToChat(answer)">联系对方</button>
             </template>
           </view>
         </view>
       </view>
     </view>
 
-    <!-- 暂无数据提示 -->
-    <view class="empty-tip" v-if="answers.length === 0">
-      <text>暂无回答记录</text>
+    <view class="empty-card" v-else>
+      <text class="empty-title">还没有回答记录</text>
+      <text class="empty-desc">去看看社区里的问题吧，也许刚好有你能帮上的那一题。</text>
     </view>
   </view>
 </template>
 
-
 <script setup>
 import { ref, onMounted } from "vue";
 import { userApi } from "@/api/user.js";
-import { onShow } from '@dcloudio/uni-app'
+import { onShow } from "@dcloudio/uni-app";
 
-
-// 模拟数据
-const answers = ref([
-  {
-    id: 1,
-    title: "如何使用Vue3的Composition API？",
-    topic: "编程",
-    tags: ["Vue3", "前端"],
-    reward: 20,
-    status: "accepted",
-    statusText: "已采纳",
-  },
-  {
-    id: 2,
-    title: "MySQL索引优化技巧",
-    topic: "编程",
-    tags: ["MySQL", "数据库"],
-    reward: 35,
-    status: "pending",
-    statusText: "待处理",
-  },
-  {
-    id: 3,
-    title: "Android开发如何接收通知",
-    topic: "移动开发",
-    tags: ["Android", "Java"],
-    reward: 50,
-    status: "answering",
-    statusText: "解答中",
-  },
-  {
-    id: 4,
-    title: "React性能优化方法",
-    topic: "前端",
-    tags: ["React", "性能优化"],
-    reward: 30,
-    status: "rejected",
-    statusText: "已拒绝",
-  },
-]);
+const answers = ref([]);
+const userId = ref("");
 
 const statusMap = {
-  pending: '待处理',
-  refused: '未接受',
-  answering: '解答中',
-  accepted: '已完成',
-  rejected: '已拒绝',
-  rated: '已完成',
+  pending: "待处理",
+  refused: "未接单",
+  answering: "回答中",
+  accepted: "已完成",
+  rejected: "已拒绝",
+  rated: "已完成",
+  refunded: "已退款",
 };
 
-const userId = ref("");
-// 跳转到聊天页面
+const formatDate = (value) => {
+  if (!value) return "最近";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "最近";
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+};
+
+const getCountByStatus = (status) => answers.value.filter((item) => item.status === status).length;
+
+const getDoneCount = () =>
+  answers.value.filter((item) => ["accepted", "rated"].includes(item.status)).length;
+
 const goToChat = async (answer) => {
   uni.navigateTo({
     url: `/pages/chat/index?questionId=${answer.id}&status=${answer.status}`,
   });
 };
 
-
-// 申述
-const appealAnswer = (answer) => {
+const appealAnswer = () => {
   uni.showModal({
-    title: "申述",
-    content: "确定要对该回答进行申述吗？",
+    title: "申诉",
+    content: "确定要对该回答进行申诉吗？",
     success: (res) => {
       if (res.confirm) {
-        // 调用申述API
         uni.showToast({
-          title: "申述已提交",
+          title: "申诉已提交",
           icon: "success",
         });
       }
@@ -145,37 +124,37 @@ const appealAnswer = (answer) => {
   });
 };
 
-// 获取我的回答列表
 const loadQuestions = async () => {
   try {
-    // loading.value = true;
     const res = await userApi.getMyAnswers();
-    answers.value = res.data.list.map((item) => ({
-      id: item.questionId,
-      title: item.title,
-      topic: item.topic,
-      tags: item.tags,
-      reward: item.reward,
-      status: item.answerer ? (item.answerer === userId.value ? item.status : 'refused') : item.status,
-      statusText: statusMap[item.status],
-      answerer: item.answerer,
-      createTime: item.createTime,
-    }));
+    answers.value = res.data.list.map((item) => {
+      const normalizedStatus =
+        item.answerer && item.answerer !== userId.value ? "refused" : item.status;
 
+      return {
+        id: item.questionId,
+        title: item.title,
+        topic: item.topic,
+        tags: item.tags,
+        reward: item.reward,
+        status: normalizedStatus,
+        statusText: statusMap[normalizedStatus] || "进行中",
+        answerer: item.answerer,
+        createTime: item.createTime,
+      };
+    });
   } catch (error) {
     uni.showToast({
       title: error.message || "加载失败",
       icon: "none",
     });
-  } finally {
-    // loading.value = false;
   }
 };
 
 const goToQuestionDetail = (id) => {
-uni.navigateTo({
-url: `/pages/question/detail?questionId=${id}&fromIndex=false`,
-});
+  uni.navigateTo({
+    url: `/pages/question/detail?questionId=${id}&fromIndex=false`,
+  });
 };
 
 onShow(() => {
@@ -189,142 +168,264 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.my-answers {
+.my-answers-page {
   min-height: 100vh;
-  background-color: #f7f7f7;
+  padding: 24rpx;
+  background: var(--app-page-bg);
+}
+
+.hero-card {
+  display: flex;
+  gap: 22rpx;
+  padding: 34rpx 30rpx;
+  border-radius: 32rpx;
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
+  box-shadow: var(--app-shadow-soft);
+}
+
+.hero-copy {
+  flex: 1;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-surface-alt);
+  border: 1rpx solid var(--app-card-border);
+  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+}
+
+.hero-title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.hero-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--app-hero-text) 84%, #ffffff);
+  opacity: 1;
+}
+
+.hero-stat {
+  width: 156rpx;
+  min-height: 156rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface-alt);
+  border: 1rpx solid var(--app-card-border);
+  backdrop-filter: blur(12rpx);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-stat-value {
+  font-size: 54rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hero-stat-label {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
+}
+
+.summary-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.summary-pill {
+  flex: 1;
   padding: 20rpx;
+  border-radius: 24rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+}
 
-  .answer-list {
-    .answer-item {
-      background-color: #fff;
-      border-radius: 12rpx;
-      padding: 24rpx;
-      margin-bottom: 20rpx;
-      display: flex;
-      flex-direction: column;
-      gap: 16rpx;
-      box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+.summary-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
+}
 
-      .question-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        width: 100%;
+.summary-value {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--app-ink);
+}
 
-        .title {
-          font-size: 32rpx;
-          color: #333;
-          line-height: 1.4;
-          flex: 1;
-          margin-right: 20rpx;
-          font-weight: 500;
-        }
+.answer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  margin-top: 22rpx;
+}
 
-        .reward {
-          font-size: 30rpx;
-          color: #ff6b6b;
-          font-weight: bold;
-          min-width: 80rpx;
-          text-align: right;
-        }
-      }
+.answer-card {
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+}
 
-      .tags-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10rpx;
-        margin: 8rpx 0;
+.answer-top,
+.answer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
 
-        .tag {
-          font-size: 24rpx;
-          color: #666;
-          background: #f5f5f5;
-          padding: 4rpx 16rpx;
-          border-radius: 4rpx;
-          height: 44rpx;
-          line-height: 44rpx;
+.answer-meta {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex-wrap: wrap;
+}
 
-          &.topic-tag {
-            color: #ff6b6b;
-            background: rgba(255, 107, 107, 0.1);
-          }
-        }
-      }
+.topic-chip,
+.reward-pill,
+.tag,
+.status-pill {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
 
-      .question-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        margin-top: 8rpx;
+.topic-chip {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
 
-        .status {
-          font-size: 26rpx;
-          padding: 4rpx 12rpx;
-          border-radius: 4rpx;
+.time-text {
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
+}
 
-          &.pending {
-            color: #ff9500;
-            background: rgba(255, 149, 0, 0.1);
-          }
+.reward-pill {
+  background: var(--app-success-bg);
+  color: var(--app-success-text);
+  font-weight: 600;
+}
 
-          &.answering {
-            color: #007aff;
-            background: rgba(0, 122, 255, 0.1);
-          }
+.title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 32rpx;
+  line-height: 1.6;
+  font-weight: 600;
+  color: var(--app-ink);
+}
 
-          &.accepted {
-            color: #34c759;
-            background: rgba(52, 199, 89, 0.1);
-          }
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
 
-          &.rated {
-            color: #34c759;
-            background: rgba(52, 199, 89, 0.1);
-          }
+.tag {
+  background: var(--app-surface-soft);
+  color: var(--app-ink-soft);
+}
 
-          &.rejected {
-            color: #ff3b30;
-            background: rgba(255, 59, 48, 0.1);
-          }
-        }
+.answer-footer {
+  margin-top: 22rpx;
+  align-items: flex-start;
+}
 
-         .action-buttons {
-          display: flex;
-          gap: 12rpx;
-          justify-content: flex-end;
-          flex-wrap: wrap;
+.status-pill.pending {
+  background: var(--app-warning-bg);
+  color: var(--app-warning-text);
+}
 
-          .btn {
-            height: 64rpx;
-            line-height: 64rpx;
-            text-align: center;
-            border-radius: 32rpx;
-            font-size: 26rpx;
-            padding: 0 24rpx;
-            margin: 0;
-            min-width: 140rpx;
+.status-pill.answering {
+  background: var(--app-info-bg);
+  color: var(--app-info-text);
+}
 
-            &.contact-btn {
-              background-color: #007aff;
-              color: #fff;
-            }
+.status-pill.accepted,
+.status-pill.rated {
+  background: var(--app-success-bg);
+  color: var(--app-success-text);
+}
 
-            &.appeal-btn {
-              background-color: #ff9500;
-              color: #fff;
-            }
-          }
-        }
-      }
-    }
-  }
+.status-pill.rejected,
+.status-pill.refused {
+  background: var(--app-danger-bg);
+  color: var(--app-danger-text);
+}
 
-  .empty-tip {
-    padding: 100rpx 0;
-    text-align: center;
-    color: #999;
-    font-size: 28rpx;
-  }
+.status-pill.refunded {
+  background: rgba(131, 208, 184, 0.18);
+  color: #279979;
+}
+.action-buttons {
+  display: flex;
+  gap: 12rpx;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btn {
+  height: 64rpx;
+  line-height: 64rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  padding: 0 24rpx;
+  margin: 0;
+  min-width: 140rpx;
+  background: var(--app-surface-soft);
+  color: var(--app-ink);
+}
+
+.btn.primary {
+  background: var(--app-primary-gradient);
+  color: #fff;
+}
+
+.btn.light {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
+
+.empty-card {
+  margin-top: 24rpx;
+  padding: 90rpx 40rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+  text-align: center;
+}
+
+.empty-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.empty-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: var(--app-ink-muted);
 }
 </style>

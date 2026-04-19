@@ -24,9 +24,13 @@ const CustomerServiceMessageSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  transactionInfo: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   messageType: {
     type: String,
-    enum: ['text', 'image'],
+    enum: ['text', 'image', 'transaction'],
     required: true
   },
   senderId: {

@@ -1,50 +1,68 @@
 <template>
-  <view class="refund-detail-container">
-    <view class="header">
-      <view class="back" @click="goBack">
-        <text class="back-icon">←</text>
-      </view>
-      <text class="title">退款详情</text>
-      <view class="right"></view>
+  <view class="refund-detail-page">
+    <view v-if="loading" class="state-card loading-card">
+      <text class="state-title">正在加载退款详情</text>
+      <text class="state-desc">稍等一下，正在同步这笔退款申请的信息。</text>
     </view>
 
-    <view class="content" v-if="!loading">
-      <view class="question-info" v-if="refundInfo.questionTitle">
-        <text class="question-title">{{ refundInfo.questionTitle }}</text>
-        <view class="question-topic" v-if="refundInfo.questionTopic">
-          <text class="topic-tag">{{ refundInfo.questionTopic }}</text>
+    <template v-else>
+      <view class="hero-card">
+        <view class="hero-copy">
+          <text class="hero-eyebrow">Refund Detail</text>
+          <text class="hero-title">退款详情</text>
+          <text class="hero-desc">
+            {{ statusDescription }}
+          </text>
+        </view>
+
+        <view class="hero-badge" :class="refundInfo.status">
+          <text class="hero-badge-value">￥{{ refundInfo.amount || 0 }}</text>
+          <text class="hero-badge-label">{{ getStatusText(refundInfo.status) }}</text>
         </view>
       </view>
 
-      <view class="refund-card">
-        <view class="refund-amount-section">
-          <text class="amount-label">退款金额</text>
-          <text class="amount-value">¥{{ refundInfo.amount }}</text>
+      <view v-if="refundInfo.questionTitle" class="panel-card">
+        <view class="section-head">
+          <text class="section-title">关联问题</text>
+          <text class="section-subtitle">这笔退款申请对应的问答记录</text>
         </view>
 
-        <view class="refund-info-section">
+        <view class="question-card">
+          <view class="question-top">
+            <text class="question-topic">{{ refundInfo.questionTopic || "未分类" }}</text>
+            <text class="question-status">{{ getStatusText(refundInfo.status) }}</text>
+          </view>
+          <text class="question-title">{{ refundInfo.questionTitle }}</text>
+        </view>
+      </view>
+
+      <view class="panel-card">
+        <view class="section-head">
+          <text class="section-title">退款信息</text>
+          <text class="section-subtitle">申请原因、说明与处理状态都会显示在这里</text>
+        </view>
+
+        <view class="amount-card">
+          <text class="amount-label">退款金额</text>
+          <text class="amount-value">￥{{ refundInfo.amount || 0 }}</text>
+        </view>
+
+        <view class="info-list">
           <view class="info-item">
             <text class="info-label">退款原因</text>
-            <text class="info-value">{{ refundInfo.reason }}</text>
+            <text class="info-value">{{ refundInfo.reason || "未填写" }}</text>
           </view>
 
           <view class="info-item">
             <text class="info-label">详细说明</text>
-            <text class="info-value description">{{ refundInfo.description }}</text>
+            <text class="info-value description">
+              {{ refundInfo.description || "对方暂时还没有补充更多说明。" }}
+            </text>
           </view>
 
-          <view class="info-item" v-if="refundInfo.images && refundInfo.images.length">
-            <text class="info-label">凭证图片</text>
-            <view class="image-grid">
-              <image
-                v-for="(image, index) in refundInfo.images"
-                :key="index"
-                :src="image"
-                class="refund-image"
-                mode="aspectFill"
-                @click="previewImage(index)"
-              />
-            </view>
+          <view v-if="refundInfo.processRemark" class="info-item">
+            <text class="info-label">处理备注</text>
+            <text class="info-value description">{{ refundInfo.processRemark }}</text>
           </view>
 
           <view class="info-item">
@@ -56,367 +74,526 @@
         </view>
       </view>
 
-      <view class="actions-section" v-if="refundInfo.status === 'pending' && !refundInfo.isMine">
-        <button class="action-btn accept-btn" @click="handleAccept">同意退款</button>
-        <button class="action-btn reject-btn" @click="handleReject">拒绝退款</button>
-      </view>
-    </view>
+      <view v-if="refundInfo.images.length" class="panel-card">
+        <view class="section-head">
+          <text class="section-title">凭证图片</text>
+          <text class="section-subtitle">点开可以查看大图</text>
+        </view>
 
-    <!-- 加载状态 -->
-    <view class="loading-container" v-if="loading">
-      <text class="loading-text">加载中...</text>
-    </view>
+        <view class="image-grid">
+          <image
+            v-for="(image, index) in refundInfo.images"
+            :key="`${image}-${index}`"
+            :src="image"
+            class="refund-image"
+            mode="aspectFill"
+            @click="previewImage(index)"
+          />
+        </view>
+      </view>
+
+      <view
+        v-if="refundInfo.status === 'pending' && !refundInfo.isMine"
+        class="action-bar"
+      >
+        <button class="action-btn reject-btn" :disabled="processing" @click="handleReject">
+          {{ processing ? "处理中..." : "拒绝退款" }}
+        </button>
+        <button class="action-btn accept-btn" :disabled="processing" @click="handleAccept">
+          {{ processing ? "处理中..." : "同意退款" }}
+        </button>
+      </view>
+    </template>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { chatApi } from '@/api/chat';
-import { refundApi } from '@/api/refund';
-import { BASE_URL } from '@/api/config';
+import { chatApi } from "@/api/chat";
+import { refundApi } from "@/api/refund";
+import { BASE_URL } from "@/api/config";
 
-const questionId = ref('');
-const refundInfo = ref({
-  amount: '',
-  reason: '',
-  description: '',
-  images: [],
-  status: 'pending',
-  isMine: false,
-  questionTitle: '',
-  questionTopic: ''
-});
+const questionId = ref("");
 const loading = ref(true);
+const processing = ref(false);
 
-onLoad((options) => {
-  if (options.questionId) {
-    questionId.value = options.questionId;
-    loadRefundDetail();
+const refundInfo = ref({
+  refundId: "",
+  amount: "",
+  reason: "",
+  description: "",
+  images: [],
+  status: "pending",
+  isMine: false,
+  questionTitle: "",
+  questionTopic: "",
+  processRemark: "",
+});
+
+const normalizeUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${BASE_URL}${url}`;
+};
+
+const getStatusText = (status) => {
+  const statusMap = {
+    pending: "待处理",
+    refunded: "已同意",
+    rejected: "已拒绝",
+  };
+  return statusMap[status] || "处理中";
+};
+
+const statusDescription = computed(() => {
+  if (refundInfo.value.status === "refunded") {
+    return "这笔退款申请已经处理完成，退款结果会同步显示在聊天记录里。";
   }
+  if (refundInfo.value.status === "rejected") {
+    return "这笔退款申请已被拒绝，你们仍然可以继续在聊天里沟通后续处理。";
+  }
+  if (refundInfo.value.isMine) {
+    return "你已经发起了退款申请，现在可以在这里查看进度和提交内容。";
+  }
+  return "对方向你发起了退款申请，请先查看原因和凭证，再决定是否处理。";
 });
 
 const loadRefundDetail = async () => {
   try {
     loading.value = true;
     const res = await refundApi.getRefundByQuestionId(questionId.value);
-    const data = res.data;
-    
+    const data = res.data || {};
+
     refundInfo.value = {
-      refundId: data.refundId,
-      amount: data.amount,
-      reason: data.reason,
-      description: data.description,
-      images: (data.proofs || []).map(img => `${BASE_URL}${img}`),
-      status: data.status,
-      isMine: data.isMine, // 暂时默认是自己的，实际需要根据后端返回的user信息判断
-      questionTitle: data.questionTitle,
-      questionTopic: data.questionTopic
+      refundId: data.refundId || "",
+      amount: data.amount || 0,
+      reason: data.reason || "",
+      description: data.description || "",
+      images: Array.isArray(data.proofs) ? data.proofs.map((img) => normalizeUrl(img)) : [],
+      status: data.status || "pending",
+      isMine: Boolean(data.isMine),
+      questionTitle: data.questionTitle || "",
+      questionTopic: data.questionTopic || "",
+      processRemark: data.processRemark || "",
     };
   } catch (error) {
-    console.error('获取退款详情失败:', error);
     uni.showToast({
-      title: error.message || '获取详情失败',
-      icon: 'none'
+      title: error.message || "获取详情失败",
+      icon: "none",
     });
   } finally {
     loading.value = false;
   }
 };
 
-const getStatusText = (status) => {
-  const statusMap = {
-    pending: '待处理',
-    refunded: '已同意',
-    rejected: '已拒绝'
-  };
-  return statusMap[status] || status;
-};
-
 const previewImage = (index) => {
   uni.previewImage({
     current: index,
-    urls: refundInfo.value.images
+    urls: refundInfo.value.images,
+  });
+};
+
+const emitRefundMessage = (text) => {
+  uni.$emit("socketMessage", {
+    id: Date.now(),
+    type: "message_sent",
+    questionId: questionId.value,
+    messageType: "refund_system",
+    text,
+    isMine: true,
   });
 };
 
 const handleAccept = async () => {
-  try {
-    uni.showLoading({ title: '处理中...' });
+  if (processing.value) return;
 
-    // 调用处理退款接口
+  try {
+    processing.value = true;
+    uni.showLoading({ title: "处理中..." });
+
     await refundApi.processRefund(refundInfo.value.refundId, {
-      status: 'refunded',
-      remark: '同意退款申请'
+      status: "refunded",
+      remark: "同意退款申请",
     });
 
-    // 发送系统消息
+    const text = "我已同意你的退款申请，退款金额将原路退回。";
     await chatApi.sendChatMessage(questionId.value, {
       messageType: "refund_system",
-      text: "我已同意你的退款申请&退款金额将原路返回",
+      text,
     });
+    emitRefundMessage(text);
 
     uni.showToast({
-      title: '已同意退款',
-      icon: 'success'
+      title: "已同意退款",
+      icon: "success",
     });
 
     setTimeout(() => {
       uni.navigateBack();
-    }, 1500);
+    }, 1200);
   } catch (error) {
-    console.error('同意退款失败:', error);
     uni.showToast({
-      title: error.message || '操作失败',
-      icon: 'none'
+      title: error.message || "处理失败",
+      icon: "none",
     });
   } finally {
+    processing.value = false;
     uni.hideLoading();
   }
 };
 
 const handleReject = async () => {
-  try {
-    uni.showLoading({ title: '处理中...' });
+  if (processing.value) return;
 
-    // 调用处理退款接口
+  try {
+    processing.value = true;
+    uni.showLoading({ title: "处理中..." });
+
     await refundApi.processRefund(refundInfo.value.refundId, {
-      status: 'rejected',
-      remark: '拒绝退款申请'
+      status: "rejected",
+      remark: "拒绝退款申请",
     });
 
-    // 发送系统消息
+    const text = "我已拒绝你的退款申请，如有需要我们可以继续沟通。";
     await chatApi.sendChatMessage(questionId.value, {
       messageType: "refund_system",
-      text: "我已拒绝你的退款申请&很抱歉，无法退款此金额",
+      text,
     });
+    emitRefundMessage(text);
 
     uni.showToast({
-      title: '已拒绝退款',
-      icon: 'success'
+      title: "已拒绝退款",
+      icon: "success",
     });
 
     setTimeout(() => {
       uni.navigateBack();
-    }, 1500);
+    }, 1200);
   } catch (error) {
-    console.error('拒绝退款失败:', error);
     uni.showToast({
-      title: error.message || '操作失败',
-      icon: 'none'
+      title: error.message || "处理失败",
+      icon: "none",
     });
   } finally {
+    processing.value = false;
     uni.hideLoading();
   }
 };
 
-const goBack = () => {
-  uni.navigateBack();
-};
+onLoad((options) => {
+  questionId.value = options.questionId || "";
+
+  if (!questionId.value) {
+    loading.value = false;
+    uni.showToast({
+      title: "缺少退款记录",
+      icon: "none",
+    });
+    return;
+  }
+
+  loadRefundDetail();
+});
 </script>
 
 <style lang="scss" scoped>
-.refund-detail-container {
+.refund-detail-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  padding: 24rpx 24rpx 190rpx;
+}
 
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 44px;
-    background-color: #fff;
-    padding: 0 16px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+.hero-card {
+  display: flex;
+  gap: 22rpx;
+  padding: 34rpx 30rpx;
+  border-radius: 32rpx;
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
+  box-shadow: var(--app-shadow-soft);
+}
 
-    .back {
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
+.hero-copy {
+  flex: 1;
+}
 
-      .back-icon {
-        font-size: 24px;
-        color: #333;
-      }
-    }
+.hero-eyebrow {
+  display: inline-flex;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+}
 
-    .title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #333;
-    }
+.hero-title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+}
 
-    .right {
-      width: 44px;
-    }
-  }
+.hero-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  opacity: 0.92;
+}
 
-  .content {
-    padding: 16px;
+.hero-badge {
+  width: 190rpx;
+  min-height: 156rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface-alt);
+  backdrop-filter: blur(12rpx);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
-    .question-info {
-      background-color: #fff;
-      border-radius: 12rpx;
-      padding: 24rpx;
-      margin-bottom: 16rpx;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.hero-badge.pending {
+  background: var(--app-surface-alt);
+}
 
-      .question-title {
-        font-size: 28rpx;
-        font-weight: 600;
-        color: #333;
-        line-height: 1.4;
-        margin-bottom: 12rpx;
-      }
+.hero-badge.refunded {
+  background: var(--app-success-bg);
+}
 
-      .question-topic {
-        .topic-tag {
-          display: inline-block;
-          padding: 6rpx 16rpx;
-          background-color: #f0f0f0;
-          border-radius: 16rpx;
-          font-size: 22rpx;
-          color: #666;
-        }
-      }
-    }
+.hero-badge.rejected {
+  background: var(--app-danger-bg);
+}
 
-    .refund-card {
-      background-color: #fff;
-      border-radius: 12rpx;
-      padding: 24rpx;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.hero-badge-value {
+  font-size: 34rpx;
+  font-weight: 700;
+}
 
-      .refund-amount-section {
-        text-align: center;
-        padding: 32rpx 0;
-        border-bottom: 1px solid #f0f0f0;
-        margin-bottom: 24rpx;
+.hero-badge-label {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+}
 
-        .amount-label {
-          display: block;
-          font-size: 14px;
-          color: #666;
-          margin-bottom: 12rpx;
-        }
+.panel-card,
+.state-card {
+  margin-top: 22rpx;
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface);
+  border: 1rpx solid var(--app-card-border);
+  box-shadow: var(--app-shadow-card);
+}
 
-        .amount-value {
-          display: block;
-          font-size: 36px;
-          font-weight: 600;
-          color: #ff4d4f;
-        }
-      }
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
 
-      .refund-info-section {
-        .info-item {
-          margin-bottom: 24rpx;
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--app-ink);
+}
 
-          &:last-child {
-            margin-bottom: 0;
-          }
+.section-subtitle {
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--app-ink-soft);
+}
 
-          .info-label {
-            display: block;
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 8rpx;
-          }
+.question-card,
+.amount-card {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  border-radius: 26rpx;
+  background: var(--app-input-bg);
+  border: 1rpx solid var(--app-line);
+}
 
-          .info-value {
-            display: block;
-            font-size: 16px;
-            color: #333;
-            line-height: 1.6;
+.question-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+}
 
-            &.description {
-              color: #666;
-            }
-          }
+.question-topic,
+.question-status {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
 
-          .image-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12rpx;
-            margin-top: 12rpx;
+.question-topic {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
 
-            .refund-image {
-              width: 160rpx;
-              height: 160rpx;
-              border-radius: 8rpx;
-            }
-          }
+.question-status {
+  background: var(--app-warning-bg);
+  color: var(--app-warning-text);
+}
 
-          .status-badge {
-            display: inline-block;
-            padding: 8rpx 24rpx;
-            border-radius: 24rpx;
-            font-size: 14px;
+.question-title {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 30rpx;
+  line-height: 1.6;
+  font-weight: 600;
+  color: var(--app-ink);
+}
 
-            &.pending {
-              background-color: #fff7e6;
-              color: #fa8c16;
-            }
+.amount-card {
+  text-align: center;
+}
 
-            &.accepted {
-              background-color: #f6ffed;
-              color: #52c41a;
-            }
+.amount-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--app-ink-soft);
+}
 
-            &.rejected {
-              background-color: #fff1f0;
-              color: #ff4d4f;
-            }
-          }
-        }
-      }
-    }
+.amount-value {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 56rpx;
+  font-weight: 700;
+  color: var(--app-accent-strong);
+}
 
-    .actions-section {
-      margin-top: 24rpx;
-      display: flex;
-      gap: 16rpx;
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22rpx;
+  margin-top: 24rpx;
+}
 
-      .action-btn {
-        flex: 1;
-        height: 88rpx;
-        border-radius: 44rpx;
-        font-size: 16px;
-        font-weight: 600;
-        border: none;
+.info-item {
+  padding: 24rpx;
+  border-radius: 24rpx;
+  background: var(--app-input-bg);
+  border: 1rpx solid var(--app-line);
+}
 
-        &.accept-btn {
-          background-color: #52c41a;
-          color: #fff;
+.info-label {
+  display: block;
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
+}
 
-          &:active {
-            opacity: 0.8;
-          }
-        }
+.info-value {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 28rpx;
+  line-height: 1.7;
+  color: var(--app-ink);
+}
 
-        &.reject-btn {
-          background-color: #fff;
-          color: #ff4d4f;
-          border: 1px solid #ff4d4f;
+.info-value.description {
+  color: var(--app-ink-soft);
+}
 
-          &:active {
-            background-color: #fff1f0;
-          }
-        }
-      }
-    }
-  }
-  .loading-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12rpx;
+  padding: 10rpx 22rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}
 
-    .loading-text {
-      font-size: 28rpx;
-      color: #666;
-    }
-  }
+.status-badge.pending {
+  background: var(--app-warning-bg);
+  color: var(--app-warning-text);
+}
+
+.status-badge.refunded {
+  background: var(--app-success-bg);
+  color: var(--app-success-text);
+}
+
+.status-badge.rejected {
+  background: var(--app-danger-bg);
+  color: var(--app-danger-text);
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-top: 24rpx;
+}
+
+.refund-image {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 24rpx;
+  background: var(--app-surface-soft);
+}
+
+.action-bar {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 24rpx);
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-btn {
+  flex: 1;
+  height: 92rpx;
+  border-radius: 999rpx;
+  border: none;
+  outline: none;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.action-btn::after {
+  border: none;
+}
+
+.accept-btn {
+  background: var(--app-primary-gradient);
+  color: #fff;
+  box-shadow: var(--app-primary-shadow);
+}
+
+.reject-btn {
+  background: var(--app-surface);
+  color: var(--app-danger-text);
+  border: 1rpx solid var(--app-card-border);
+  box-shadow: var(--app-shadow-card);
+}
+
+.action-btn[disabled] {
+  opacity: 0.72;
+}
+
+.loading-card {
+  margin-top: 24rpx;
+}
+
+.state-title {
+  display: block;
+  text-align: center;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--app-ink);
+}
+
+.state-desc {
+  display: block;
+  margin-top: 14rpx;
+  text-align: center;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: var(--app-ink-muted);
 }
 </style>

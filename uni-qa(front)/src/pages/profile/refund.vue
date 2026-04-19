@@ -1,484 +1,546 @@
 <template>
-  <view class="refund-container">
-    <view class="header">
-      <view class="right"></view>
+  <view class="refund-page">
+    <view class="hero-card">
+      <view class="hero-copy">
+        <text class="hero-eyebrow">Refund Request</text>
+        <text class="hero-title">申请退款</text>
+        <text class="hero-desc">补充清楚原因和凭证，能让对方更快理解情况，也方便后续处理。</text>
+      </view>
+      <view class="hero-badge">
+        <text class="hero-badge-value">¥{{ refundAmount || "0.00" }}</text>
+        <text class="hero-badge-label">申请金额</text>
+      </view>
     </view>
 
-    <view class="content">
-      <!-- 退款金额 -->
-      <view class="form-item">
-        <text class="label">退款金额</text>
-        <view class="value">
-          <view class="amount-input-wrapper">
-            <text class="currency">¥</text>
-            <input
-              type="digit"
-              v-model="refundAmount"
-              class="amount-input"
-              placeholder="0.00"
-              @input="limitAmount"
-            />
-          </view>
-          <text class="hint">可修改，最多<view class="price-container"><text class="currency-symbol">¥</text><text class="amount">{{ maxAmount }}</text></view></text>
-        </view>
+    <view class="panel-card" v-if="question">
+      <view class="section-head">
+        <text class="section-title">当前问题</text>
+        <text class="section-subtitle">退款会关联到这条问答记录</text>
       </view>
 
-      <!-- 退款原因 -->
-      <view class="form-item" @click="selectRefundReason">
-        <text class="label">退款原因</text>
-        <view class="value">
-          <text>{{ refundReasonText || '请选择退款原因' }}</text>
-          <text class="arrow">></text>
+      <view class="question-card">
+        <view class="question-top">
+          <text class="question-topic">{{ question.topic || "未分类" }}</text>
+          <text class="question-reward">原赏金 ¥{{ maxAmount }}</text>
         </view>
+        <text class="question-title">{{ question.title || "未命名问题" }}</text>
+      </view>
+    </view>
+
+    <view class="panel-card">
+      <view class="section-head">
+        <text class="section-title">退款金额</text>
+        <text class="section-subtitle">金额不能超过原赏金，可手动调整</text>
       </view>
 
-      <!-- 补充凭证 -->
-      <view class="form-section">
-        <text class="section-title">请补充凭证</text>
-        <view class="upload-container">
-          <view class="upload-item" @click="uploadProof">
-            <text class="upload-icon">+</text>
-            <text class="upload-text">上传更多
-有效的证据</text>
-          </view>
-          <view v-for="(proof, index) in proofs" :key="index" class="proof-item">
-            <image :src="proof" class="proof-image" mode="aspectFill"></image>
-            <view class="delete-btn" @click="deleteProof(index)">
-              <text>×</text>
-            </view>
-          </view>
+      <view class="amount-card">
+        <view class="amount-input-wrap">
+          <text class="currency-symbol">¥</text>
+          <input
+            v-model="refundAmount"
+            class="amount-input"
+            type="digit"
+            placeholder="0.00"
+            @input="limitAmount"
+          />
         </view>
+        <text class="amount-hint">最高可申请 ¥{{ maxAmount }}</text>
+      </view>
+    </view>
+
+    <view class="panel-card">
+      <view class="section-head">
+        <text class="section-title">退款原因</text>
+        <text class="section-subtitle">请选择一个最接近当前情况的原因</text>
       </view>
 
-      <!-- 补充描述 -->
-      <view class="form-section">
-        <text class="section-title">补充描述</text>
+      <view class="reason-list">
+        <view
+          v-for="reason in refundReasons"
+          :key="reason"
+          class="reason-chip"
+          :class="{ active: refundReason === reason }"
+          @click="selectRefundReason(reason)"
+        >
+          <text>{{ reason }}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="panel-card">
+      <view class="section-head">
+        <text class="section-title">补充凭证</text>
+        <text class="section-subtitle">可选，最多 9 张，截图或照片都可以</text>
+      </view>
+
+      <view class="image-grid">
+        <view
+          v-for="(proof, index) in proofs"
+          :key="`${proof}-${index}`"
+          class="preview-item"
+          @click="previewProof(index)"
+        >
+          <image :src="proof" class="preview-image" mode="aspectFill" />
+          <view class="delete-btn" @click.stop="deleteProof(index)">
+            <text>×</text>
+          </view>
+        </view>
+
+        <view v-if="proofs.length < 9" class="upload-tile" @click="uploadProof">
+          <text class="upload-plus">+</text>
+          <text class="upload-text">上传凭证</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="panel-card">
+      <view class="section-head">
+        <text class="section-title">补充说明</text>
+        <text class="section-subtitle">尽量写清具体问题，方便对方判断和处理</text>
+      </view>
+
+      <view class="textarea-wrap">
         <textarea
           v-model="description"
-          placeholder="请详细描述你遇到的问题，平台将作为凭证留存并帮助你退款。"
-          class="textarea"
+          class="desc-textarea"
           maxlength="500"
-        ></textarea>
+          placeholder="写下你申请退款的具体原因..."
+        />
+        <text class="textarea-counter">{{ description.length }}/500</text>
       </view>
-   
     </view>
 
-    <!-- 提交按钮 -->
-    <view class="submit-container">
-      <button class="submit-btn" @click="submitRefund">提交</button>
+    <view class="submit-bar">
+      <button class="submit-btn" @click="submitRefund">提交退款申请</button>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { refundApi } from '@/api/refund';
-import { chatApi } from '@/api/chat';
-import { commonApi } from '@/api/common';
+import { chatApi } from "@/api/chat";
+import { commonApi } from "@/api/common";
+import { refundApi } from "@/api/refund";
 
-// 退款信息
 const question = ref(null);
-const refundAmount = ref('48.6');
-const maxAmount = ref('48.6');
-const refundReason = ref('');
-const refundReasonText = ref('');
-const description = ref('');
+const refundAmount = ref("0.00");
+const maxAmount = ref("0.00");
+const refundReason = ref("");
+const description = ref("");
 const proofs = ref([]);
 
-// 接收参数
+const refundReasons = ["答非所问", "无人回复", "回答没有帮助", "其他原因"];
+
 onLoad((options) => {
-  if (options.question) {
-    try {
-      question.value = JSON.parse(options.question);
-      if (question.value.reward) {
-        refundAmount.value = question.value.reward;
-        maxAmount.value = question.value.reward;
-      }
-      console.log('退款申请页面接收参数', question.value);
-    } catch (error) {
-      console.error('解析参数失败', error);
-    }
+  if (!options.question) return;
+
+  try {
+    const parsedQuestion = JSON.parse(options.question);
+    question.value = parsedQuestion;
+
+    const rewardValue = String(parsedQuestion.reward || 0);
+    refundAmount.value = rewardValue;
+    maxAmount.value = rewardValue;
+  } catch (error) {
+    console.error("解析退款问题参数失败:", error);
   }
 });
 
-// 退款原因选项
-const refundReasons = [
-  '答非所问',
-  '无人回复',
-  '回答没有帮助',
-  '其他原因'
-];
-
-
-
-// 选择退款原因
-const selectRefundReason = () => {
-  uni.showActionSheet({
-    itemList: refundReasons,
-    success: (res) => {
-      const selectedReason = refundReasons[res.tapIndex];
-      refundReason.value = selectedReason;
-      refundReasonText.value = selectedReason;
-    }
-  });
+const selectRefundReason = (reason) => {
+  refundReason.value = reason;
 };
 
-// 上传凭证
 const uploadProof = () => {
   uni.chooseImage({
     count: 9 - proofs.value.length,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
+    sizeType: ["compressed"],
+    sourceType: ["album", "camera"],
     success: (res) => {
-      // 只保存临时文件路径，不上传
       proofs.value = [...proofs.value, ...res.tempFilePaths];
-    }
+    },
   });
 };
 
-// 删除凭证
+const previewProof = (index) => {
+  uni.previewImage({
+    current: index,
+    urls: proofs.value,
+  });
+};
+
 const deleteProof = (index) => {
   proofs.value.splice(index, 1);
 };
 
-// 实时限制金额
 const limitAmount = () => {
-  let value = refundAmount.value;
   const max = parseFloat(maxAmount.value);
+  const current = parseFloat(refundAmount.value);
 
-  let amount = parseFloat(value);
-  
-  if (!isNaN(amount)) {
-    if (amount > max) {
-        // ✅ 关键：先清空，再赋值，强制触发更新
-      refundAmount.value = '';       
-      refundAmount.value = max.toString();
-    }
+  if (!Number.isNaN(current) && !Number.isNaN(max) && current > max) {
+    refundAmount.value = String(max);
   }
-
-  // 关键：强制让 Vue 更新视图
-  refundAmount.value = refundAmount.value; 
 };
 
-// 提交退款申请
 const submitRefund = async () => {
-  if (!refundReason.value) {
+  if (!question.value?.id) {
     uni.showToast({
-      title: '请选择退款原因',
-      icon: 'none'
+      title: "缺少退款对象",
+      icon: "none",
     });
     return;
   }
 
-  if (!description.value) {
+  if (!refundReason.value) {
     uni.showToast({
-      title: '请填写补充描述',
-      icon: 'none'
+      title: "请选择退款原因",
+      icon: "none",
+    });
+    return;
+  }
+
+  if (!description.value.trim()) {
+    uni.showToast({
+      title: "请填写补充说明",
+      icon: "none",
     });
     return;
   }
 
   try {
-    // 显示加载提示
     uni.showLoading({
-      title: '提交中...'
+      title: "提交中...",
     });
 
     let uploadedUrls = [];
-    // 如果有凭证，先上传
     if (proofs.value.length > 0) {
-      // 上传图片
-      const uploadResult = await commonApi.uploadImage(proofs.value, 'refund');
-      uploadedUrls = uploadResult.data
+      const uploadResult = await commonApi.uploadImage(proofs.value, "refund");
+      uploadedUrls = Array.isArray(uploadResult.data)
+        ? uploadResult.data
+        : uploadResult.data
+          ? [uploadResult.data]
+          : [];
     }
 
-    // 构建退款申请参数
-    const refundParams = {
+    await refundApi.submitRefund({
       questionId: question.value.id,
       amount: parseFloat(refundAmount.value),
       maxAmount: parseFloat(maxAmount.value),
       reason: refundReason.value,
       proofs: uploadedUrls,
-      description: description.value
-    };
+      description: description.value.trim(),
+    });
 
-
-    // 调用退款申请API
-    const res = await refundApi.submitRefund(refundParams);
-
-    // 调用聊天接口发送退款系统消息
     await chatApi.sendChatMessage(question.value.id, {
       messageType: "refund_system",
-      text: "我发起了退款申请&等待你处理，点击查看退款详情"
+      text: "我发起了退款申请，等待你处理，点击查看退款详情",
     });
 
-    // 显示成功提示
+    uni.hideLoading();
     uni.showToast({
-      title: '退款申请已提交',
-      icon: 'success'
+      title: "退款申请已提交",
+      icon: "success",
     });
 
-    // 返回上一页
     setTimeout(() => {
       uni.navigateBack();
     }, 1500);
   } catch (error) {
-    console.error('提交退款申请失败:', error);
-    uni.showToast({
-      title: error.message || '提交失败，请重试',
-      icon: 'none'
-    });
-  } finally {
+    console.error("提交退款申请失败:", error);
     uni.hideLoading();
+    uni.showToast({
+      title: error.message || "提交失败，请重试",
+      icon: "none",
+    });
   }
 };
-
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack();
-};
-
-// 页面初始化
-onMounted(() => {
-  console.log('退款申请页面初始化', question);
-});
 </script>
 
 <style lang="scss" scoped>
-.refund-container {
+.refund-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  padding: 24rpx 24rpx 190rpx;
+}
 
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 44px;
-    background-color: #fff;
-    padding: 0 16px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+.hero-card {
+  display: flex;
+  gap: 22rpx;
+  padding: 34rpx 30rpx;
+  border-radius: 32rpx;
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
+  box-shadow: var(--app-shadow-soft);
+}
 
-    .back {
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
+.hero-copy {
+  flex: 1;
+}
 
-      .back-icon {
-        font-size: 24px;
-        color: #333;
-      }
-    }
+.hero-eyebrow {
+  display: inline-flex;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+}
 
-    .title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #333;
-    }
+.hero-title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+}
 
-    .right {
-      width: 44px;
-    }
-  }
+.hero-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  opacity: 0.92;
+}
 
-  .content {
-    padding: 16px 0;
+.hero-badge {
+  width: 180rpx;
+  min-height: 156rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface-alt);
+  backdrop-filter: blur(12rpx);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
-    .form-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: #fff;
-      padding: 16px;
-      border-bottom: 1px solid #f0f0f0;
+.hero-badge-value {
+  font-size: 34rpx;
+  font-weight: 700;
+}
 
-      .label {
-        font-size: 16px;
-        color: #333;
-      }
+.hero-badge-label {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+}
 
-      .value {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
+.panel-card {
+  margin-top: 22rpx;
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface);
+  border: 1rpx solid var(--app-card-border);
+  box-shadow: var(--app-shadow-card);
+}
 
-        text {
-          font-size: 14px;
-          color: #666;
-        }
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
 
-        .amount-input-wrapper {
-          display: flex;
-          align-items: center;
-          
-          .currency {
-            font-size: 18px;
-            font-weight: 600;
-            color: #ff4d4f;
-          }
-          
-          .amount-input {
-            font-size: 18px;
-            font-weight: 600;
-            color: #ff4d4f;
-            text-align: right;
-            min-width: 80px;
-            padding: 4px 8px;
-            border: none;
-            background: transparent;
-            
-            &::placeholder {
-              color: #ff4d4f;
-              opacity: 0.5;
-            }
-          }
-        }
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--app-ink);
+}
 
-        .hint {
-          font-size: 12px;
-          color: #999;
-          margin-top: 4px;
-          
-          .price-container {
-            display: flex;
-            align-items: baseline;
-            gap: 1px;
-            
-            .currency-symbol {
-              font-size: 12px;
-            }
-            
-            .amount {
-              font-size: 12px;
-            }
-          }
-        }
+.section-subtitle {
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--app-ink-soft);
+}
 
-        .arrow {
-          font-size: 16px;
-          color: #999;
-          margin-top: 4px;
-        }
-      }
-    }
+.question-card {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  border-radius: 26rpx;
+  background: var(--app-input-bg);
+  border: 1rpx solid var(--app-line);
+}
 
-    .form-section {
-      background-color: #fff;
-      margin-top: 12px;
-      padding: 16px;
+.question-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14rpx;
+}
 
-      .section-title {
-        font-size: 16px;
-        color: #333;
-        margin-bottom: 12px;
-      }
+.question-topic,
+.question-reward {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
 
-      .upload-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
+.question-topic {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
 
-        .upload-item {
-          width: 80px;
-          height: 80px;
-          border: 1px dashed #d9d9d9;
-          border-radius: 4px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          background-color: #fafafa;
+.question-reward {
+  background: var(--app-success-bg);
+  color: var(--app-success-text);
+}
 
-          .upload-icon {
-            font-size: 24px;
-            color: #999;
-          }
+.question-title {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 30rpx;
+  line-height: 1.6;
+  font-weight: 600;
+  color: var(--app-ink);
+}
 
-          .upload-text {
-            font-size: 12px;
-            color: #999;
-            text-align: center;
-            margin-top: 4px;
-          }
-        }
+.amount-card {
+  margin-top: 24rpx;
+  padding: 26rpx 24rpx;
+  border-radius: 26rpx;
+  background: var(--app-input-bg);
+  border: 1rpx solid var(--app-line);
+}
 
-        .proof-item {
-          position: relative;
-          width: 80px;
-          height: 80px;
+.amount-input-wrap {
+  display: flex;
+  align-items: center;
+}
 
-          .proof-image {
-            width: 100%;
-            height: 100%;
-            border-radius: 4px;
-          }
+.currency-symbol {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--app-accent-strong);
+}
 
-          .delete-btn {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 20px;
-            height: 20px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 16px;
-          }
-        }
-      }
+.amount-input {
+  flex: 1;
+  margin-left: 10rpx;
+  font-size: 46rpx;
+  font-weight: 700;
+  color: var(--app-accent-strong);
+}
 
-      .textarea {
-        width: 100%;
-        min-height: 100px;
-        padding: 12px;
-        border: 1px solid #d9d9d9;
-        border-radius: 4px;
-        font-size: 14px;
-        color: #333;
-        resize: none;
-        background-color: #fafafa;
+.amount-hint {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  color: var(--app-ink-soft);
+}
 
-        &::placeholder {
-          color: #999;
-        }
-      }
-    }
+.reason-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
 
-    .tip {
-      margin: 16px;
-      font-size: 12px;
-      color: #999;
-      line-height: 1.5;
-    }
-  }
+.reason-chip {
+  padding: 16rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--app-neutral-chip-bg);
+  color: var(--app-ink-soft);
+  font-size: 24rpx;
+}
 
-  .submit-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 16px;
-    background-color: #fff;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+.reason-chip.active {
+  background: var(--app-primary-gradient);
+  color: #fff;
+  box-shadow: var(--app-primary-shadow);
+}
 
-    .submit-btn {
-      width: 100%;
-      height: 44px;
-      background-color: #ffd600;
-      color: #333;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 22px;
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-top: 24rpx;
+}
 
-      &:active {
-        opacity: 0.8;
-      }
-    }
-  }
+.upload-tile,
+.preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.upload-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  background: var(--app-input-bg);
+  border: 2rpx dashed var(--app-line);
+}
+
+.upload-plus {
+  font-size: 52rpx;
+  line-height: 1;
+  color: var(--app-accent-strong);
+}
+
+.upload-text {
+  font-size: 22rpx;
+  color: var(--app-ink-soft);
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  width: 42rpx;
+  height: 42rpx;
+  border-radius: 50%;
+  background: var(--app-mask-bg);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+}
+
+.textarea-wrap {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  border-radius: 26rpx;
+  background: var(--app-input-bg);
+  border: 1rpx solid var(--app-line);
+}
+
+.desc-textarea {
+  width: 100%;
+  height: 220rpx;
+  font-size: 28rpx;
+  line-height: 1.7;
+  color: var(--app-ink);
+}
+
+.textarea-counter {
+  display: block;
+  margin-top: 14rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
+}
+
+.submit-bar {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 24rpx);
+}
+
+.submit-btn {
+  width: 100%;
+  height: 92rpx;
+  border-radius: 999rpx;
+  background: var(--app-primary-gradient);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: var(--app-primary-shadow);
 }
 </style>

@@ -203,7 +203,7 @@ const acceptRequest = async (request) => {
 <style lang="scss" scoped>
 .customer-service-container {
   min-height: 100vh;
-  background-color: #f7f7f7;
+  background: transparent;
   padding-bottom: 0;
 
   .page-header {
@@ -211,14 +211,17 @@ const acceptRequest = async (request) => {
     align-items: center;
     justify-content: space-between;
     padding: 24rpx 20rpx;
-    background-color: #fff;
-    border-bottom: 1rpx solid #e5e5e5;
+    margin: 24rpx 20rpx 0;
+    background: var(--app-surface);
+    border: 1rpx solid var(--app-card-border);
+    border-radius: 28rpx;
+    box-shadow: var(--app-shadow-card);
 
     .back-btn {
       min-width: 120rpx;
       display: flex;
       align-items: center;
-      color: #333;
+      color: var(--app-ink);
       font-size: 28rpx;
     }
 
@@ -235,7 +238,7 @@ const acceptRequest = async (request) => {
     .page-title {
       font-size: 32rpx;
       font-weight: 600;
-      color: #333;
+      color: var(--app-ink);
     }
 
     .header-placeholder {
@@ -245,21 +248,23 @@ const acceptRequest = async (request) => {
 
   .tab-bar {
     display: flex;
-    background-color: #fff;
-    border-bottom: 1rpx solid #e5e5e5;
-    box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.05);
+    margin: 18rpx 20rpx 0;
+    background: var(--app-surface);
+    border: 1rpx solid var(--app-card-border);
+    border-radius: 24rpx;
+    box-shadow: var(--app-shadow-card);
 
     .tab-item {
       flex: 1;
       padding: 24rpx;
       text-align: center;
       font-size: 28rpx;
-      color: #666;
+      color: var(--app-ink-soft);
       position: relative;
       transition: all 0.3s ease;
 
       &.active {
-        color: #007aff;
+        color: var(--app-accent-strong);
         font-weight: 500;
 
         &::after {
@@ -269,13 +274,13 @@ const acceptRequest = async (request) => {
           left: 25%;
           width: 50%;
           height: 4rpx;
-          background-color: #007aff;
+          background: var(--app-accent);
           transition: all 0.3s ease;
         }
       }
 
       &:hover {
-        color: #007aff;
+        color: var(--app-accent-strong);
       }
     }
   }
@@ -286,15 +291,16 @@ const acceptRequest = async (request) => {
     .session-item {
       display: flex;
       align-items: center;
-      background-color: #fff;
-      border-radius: 12rpx;
+      background: var(--app-surface);
+      border: 1rpx solid var(--app-card-border);
+      border-radius: 24rpx;
       padding: 24rpx;
       margin-bottom: 16rpx;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+      box-shadow: var(--app-shadow-card);
       transition: all 0.3s ease;
 
       &:hover {
-        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+        box-shadow: var(--app-shadow-soft);
         transform: translateY(-2rpx);
       }
 
@@ -304,7 +310,7 @@ const acceptRequest = async (request) => {
         border-radius: 40rpx;
         overflow: hidden;
         margin-right: 20rpx;
-        border: 2rpx solid #f0f0f0;
+        border: 2rpx solid var(--app-card-border);
 
         image {
           width: 100%;
@@ -325,18 +331,18 @@ const acceptRequest = async (request) => {
           .customer-name {
             font-size: 28rpx;
             font-weight: 500;
-            color: #333;
+            color: var(--app-ink);
           }
 
           .session-time {
             font-size: 22rpx;
-            color: #999;
+            color: var(--app-ink-muted);
           }
         }
 
         .last-message {
           font-size: 24rpx;
-          color: #666;
+          color: var(--app-ink-soft);
           line-height: 1.4;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -349,7 +355,8 @@ const acceptRequest = async (request) => {
           position: absolute;
           top: 0;
           right: 0;
-          background-color: #ff3b30;
+          background: var(--app-danger-bg);
+          color: var(--app-danger-text);
           color: #fff;
           font-size: 20rpx;
           padding: 4rpx 12rpx;
@@ -367,15 +374,16 @@ const acceptRequest = async (request) => {
     .request-item {
       display: flex;
       align-items: center;
-      background-color: #fff;
-      border-radius: 12rpx;
+      background: var(--app-surface);
+      border: 1rpx solid var(--app-card-border);
+      border-radius: 24rpx;
       padding: 24rpx;
       margin-bottom: 16rpx;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+      box-shadow: var(--app-shadow-card);
       transition: all 0.3s ease;
 
       &:hover {
-        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+        box-shadow: var(--app-shadow-soft);
         transform: translateY(-2rpx);
       }
 
@@ -385,7 +393,7 @@ const acceptRequest = async (request) => {
         border-radius: 40rpx;
         overflow: hidden;
         margin-right: 20rpx;
-        border: 2rpx solid #f0f0f0;
+        border: 2rpx solid var(--app-card-border);
 
         image {
           width: 100%;
@@ -402,18 +410,18 @@ const acceptRequest = async (request) => {
         .customer-name {
           font-size: 28rpx;
           font-weight: 500;
-          color: #333;
+          color: var(--app-ink);
           margin-bottom: 16rpx;
         }
 
         .request-time {
           font-size: 22rpx;
-          color: #999;
+          color: var(--app-ink-muted);
         }
       }
 
       .accept-btn {
-        background-color: #007aff;
+        background: var(--app-primary-gradient);
         color: #fff;
         border: none;
         border-radius: 20rpx;
@@ -421,9 +429,10 @@ const acceptRequest = async (request) => {
         font-size: 24rpx;
         font-weight: 500;
         transition: all 0.3s ease;
+        box-shadow: var(--app-primary-shadow);
 
         &:hover {
-          background-color: #0066cc;
+          filter: brightness(0.96);
           transform: scale(1.05);
         }
 
@@ -438,7 +447,7 @@ const acceptRequest = async (request) => {
   .empty-requests {
     padding: 120rpx 0;
     text-align: center;
-    color: #999;
+    color: var(--app-ink-muted);
     font-size: 28rpx;
 
     &::before {

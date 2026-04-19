@@ -125,7 +125,7 @@ export const applyApi = {
      */
     markApplyAcceptAsFinished(id) {
         return request({
-            url: `/question/apply-accept/${id}/finish`,
+            url: `/apply/apply-accept/${id}/finish`,
             method: 'PATCH'
         });
     },

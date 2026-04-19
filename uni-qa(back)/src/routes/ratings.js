@@ -118,7 +118,7 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
         }));
 
         // 获取被评价者信息
-        const ratedUser = await UserModel.findById(req.params.userId, 'account reputation ratingScore');
+        const ratedUser = await UserModel.findById(req.params.userId, 'account name avatar reputation ratingScore');
 
         res.status(200).json({
             code: 200,
@@ -126,9 +126,11 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
                 total,
                 list: formattedRatings,
                 userInfo: {
-                    userName: ratedUser.account,
-                    reputation: ratedUser.reputation,
-                    ratingScore: ratedUser.ratingScore
+                    userName: ratedUser?.name || ratedUser?.account || '',
+                    account: ratedUser?.account || '',
+                    avatar: ratedUser?.avatar || '',
+                    reputation: ratedUser?.reputation || 0,
+                    ratingScore: ratedUser?.ratingScore || 0
                 }
             }
         });

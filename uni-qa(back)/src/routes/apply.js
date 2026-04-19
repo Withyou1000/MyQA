@@ -126,7 +126,7 @@ router.patch('/:questionId/apply/:applicantId/accept', authMiddleware, async (re
 
 
 /**
- * 采纳回答
+ * 是否采纳回答
  */
 router.post('/accept/:questionId/:accept', authMiddleware, async (req, res) => {
   try {
@@ -157,22 +157,25 @@ router.post('/accept/:questionId/:accept', authMiddleware, async (req, res) => {
     await question.save();
 
     // 合并查询回答者和更新余额的操作
-    const answerer = await UserModel.findByIdAndUpdate(
-      question.answerer,  // 回答者ID
-      { $inc: { balance: question.reward } },  // 增加余额
-      { new: true, fields: 'balance _id' }  // 返回更新后的文档，只包含balance和_id字段
-    );
+    let answerer;
+    if (question.status === 'accepted') {
+      answerer = await UserModel.findByIdAndUpdate(
+        question.answerer,  // 回答者ID
+        { $inc: { balance: question.reward } },  // 增加余额
+        { new: true, fields: 'balance _id' }  // 返回更新后的文档，只包含balance和_id字段
+      );
+    }
 
     res.status(200).json({
       code: 200,
-      message: '采纳成功',
+      message: '操作成功',
       data: {
         questionId,
         acceptTime: new Date(),
-        answerer: {
+        answerer: answerer ? {
           userId: answerer._id,
           balanceAfter: answerer.balance
-        }
+        } : null
       }
     });
   } catch (error) {

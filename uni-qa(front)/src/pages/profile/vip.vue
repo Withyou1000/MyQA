@@ -112,21 +112,23 @@ const handlePurchase = () => {
 <style lang="scss" scoped>
 .vip-container {
   min-height: 100vh;
-  background-color: #f7f7f7;
+  background: transparent;
   padding: 20rpx;
   
   .title {
     font-size: 32rpx;
-    color: #333;
+    color: var(--app-ink);
     font-weight: 500;
     margin-bottom: 30rpx;
   }
   
   .vip-benefits {
-    background-color: #fff;
-    border-radius: 12rpx;
+    background: var(--app-surface);
+    border: 1rpx solid var(--app-card-border);
+    border-radius: 24rpx;
     padding: 30rpx;
     margin-bottom: 20rpx;
+    box-shadow: var(--app-shadow-card);
     
     .benefits-list {
       .benefit-item {
@@ -146,14 +148,14 @@ const handlePurchase = () => {
         .content {
           .name {
             font-size: 28rpx;
-            color: #333;
+            color: var(--app-ink);
             margin-bottom: 8rpx;
             display: block;
           }
           
           .desc {
             font-size: 24rpx;
-            color: #999;
+            color: var(--app-ink-muted);
           }
         }
       }
@@ -161,10 +163,12 @@ const handlePurchase = () => {
   }
   
   .vip-plans {
-    background-color: #fff;
-    border-radius: 12rpx;
+    background: var(--app-surface);
+    border: 1rpx solid var(--app-card-border);
+    border-radius: 24rpx;
     padding: 30rpx;
     margin-bottom: 120rpx;
+    box-shadow: var(--app-shadow-card);
     
     .plans-list {
       display: flex;
@@ -172,21 +176,21 @@ const handlePurchase = () => {
       
       .plan-item {
         flex: 1;
-        background-color: #f9f9f9;
-        border-radius: 12rpx;
+        background: var(--app-input-bg);
+        border-radius: 20rpx;
         padding: 30rpx 20rpx;
         text-align: center;
         position: relative;
-        border: 2rpx solid transparent;
+        border: 2rpx solid var(--app-line);
         
         &.active {
-          background-color: #FFF9E6;
-          border-color: #FFB800;
+          background: var(--app-accent-soft);
+          border-color: var(--app-accent);
         }
         
         .duration {
           font-size: 28rpx;
-          color: #333;
+          color: var(--app-ink);
           margin-bottom: 16rpx;
         }
         
@@ -195,19 +199,19 @@ const handlePurchase = () => {
           
           .symbol {
             font-size: 24rpx;
-            color: #333;
+            color: var(--app-ink);
           }
           
           .value {
             font-size: 40rpx;
-            color: #333;
+            color: var(--app-ink);
             font-weight: 600;
           }
         }
         
         .original-price {
           font-size: 24rpx;
-          color: #999;
+          color: var(--app-ink-muted);
           text-decoration: line-through;
           display: block;
           margin-bottom: 8rpx;
@@ -217,7 +221,7 @@ const handlePurchase = () => {
           position: absolute;
           top: 0;
           right: 0;
-          background-color: #FF6B6B;
+          background: var(--app-primary-gradient);
           color: #fff;
           font-size: 20rpx;
           padding: 4rpx 12rpx;
@@ -233,7 +237,7 @@ const handlePurchase = () => {
     right: 40rpx;
     bottom: 40rpx;
     height: 88rpx;
-    background: linear-gradient(135deg, #FFD700, #FFA500);
+    background: var(--app-primary-gradient);
     border-radius: 44rpx;
     display: flex;
     align-items: center;
@@ -241,6 +245,7 @@ const handlePurchase = () => {
     color: #fff;
     font-size: 32rpx;
     font-weight: 500;
+    box-shadow: var(--app-primary-shadow);
     
     &:active {
       opacity: 0.9;

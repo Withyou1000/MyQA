@@ -1,162 +1,109 @@
 <template>
-  <view class="detail-container">
-    <!-- 问题信息区域 -->
+  <view class="detail-page">
     <view class="question-card">
-      <!-- 作者和主题信息 -->
       <view class="question-header">
         <view class="author-info">
-          <!-- <image class="avatar" :src="question.author.avatar || '/static/images/default-avatar.png'" mode="aspectFill"></image> -->
+          <image
+            v-if="authorAvatar"
+            :src="authorAvatar"
+            class="author-avatar-image"
+            mode="aspectFill"
+          />
+          <view v-else class="author-avatar">{{ getAuthorInitial() }}</view>
+
           <view class="author-meta">
-            <text class="author-name">{{ question.author.account }}</text>
-            <text class="post-time">{{ question.createTime }}</text>
+            <text class="author-name">{{ getAuthorName() }}</text>
+            <text class="post-time">{{ question.createTime || "刚刚发布" }}</text>
           </view>
         </view>
+
         <view class="category-badge">
-          <text>{{ question.topic || "未分类" }}</text>
+          <text>{{ question.topic || question.category || "未分类" }}</text>
         </view>
       </view>
 
-      <!-- 问题标题 -->
       <text class="title">{{ question.title }}</text>
 
-      <!-- 标签区域 -->
-      <view
-        class="tags-container"
-        v-if="question.tags && question.tags.length > 0"
-      >
-        <view class="tag" v-for="(tag, index) in question.tags" :key="index">
+      <view v-if="question.tags && question.tags.length > 0" class="tags-container">
+        <view v-for="(tag, index) in question.tags" :key="index" class="tag">
           <text>{{ tag }}</text>
         </view>
       </view>
 
-      <!-- 问题内容 -->
-      <view class="question-content">
-        <rich-text
-          v-if="question.content"
-          :nodes="question.content"
-        ></rich-text>
-        <text v-else class="no-content">该问题没有详细描述</text>
-      </view>
-
-      <!-- 悬赏信息 -->
       <view class="reward-container">
-        <image
-          class="reward-icon"
-          src="/static/images/reward-icon.png"
-          mode="aspectFit"
-        ></image>
+        <view class="reward-icon">赏</view>
         <view class="reward-info">
           <text class="reward-text">悬赏金额</text>
-          <text class="reward-amount">{{ question.reward }}元</text>
+          <text class="reward-amount">{{ question.reward || 0 }}元</text>
         </view>
       </view>
 
-      <!-- 图片展示区 -->
-      <view class="image-grid" v-if="question.images && question.images.length">
-        <view
-          class="image-item"
-          v-for="(img, index) in question.images"
-          :key="index"
-        >
+      <view class="question-content">
+        <rich-text v-if="question.content" :nodes="question.content"></rich-text>
+        <text v-else class="no-content">这个问题还没有补充更多描述。</text>
+      </view>
+
+      <view v-if="question.images && question.images.length" class="image-grid">
+        <view v-for="(img, index) in question.images" :key="index" class="image-item">
           <image
             :src="img"
             mode="aspectFill"
-            @click="previewImage(index)"
             class="question-image"
+            @click="previewImage(index)"
           />
         </view>
       </view>
     </view>
 
-    <!-- 回答按钮 -->
     <view class="answer-section">
       <view v-if="fromIndex && question.author._id !== currentUser.userId">
-        <button class="answer-btn" @click="handleAnswer">申请回答</button>
+        <button class="answer-btn" :disabled="isApplying" @click="handleAnswer">
+          {{ isApplying ? "提交中..." : "申请回答" }}
+        </button>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-// 修改导入方式
+import { computed, ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
 import { applyApi } from "@/api/apply";
 import { questionApi } from "@/api/question";
 import { BASE_URL } from "@/api/config";
 
-
-// 从路由参数获取是否来自我的提问列表
 const fromIndex = ref(false);
-// 获取当前用户信息
-const currentUser = ref(uni.getStorageSync('userInfo') || {});
+const currentUser = ref(uni.getStorageSync("userInfo") || {});
+const isApplying = ref(false);
 
 const question = ref({
   questionId: "",
   title: "",
   content: "",
-  category: "", // 新增主题字段
-  tags: [], // 新增标签数组
+  category: "",
+  topic: "",
+  tags: [],
   reward: 0,
   images: [],
   createTime: "",
   author: {
     _id: "",
     account: "",
-    avatar: "", // 新增头像字段
+    avatar: "",
   },
 });
 
-// 处理回答按钮点击
-const handleAnswer = () => {
-  uni.showModal({
-    title: "确认回答",
-    content: "确定要回答这个问题吗？",
-    success: (res) => {
-      if (res.confirm) {
-        if (
-          question.value.author._id == uni.getStorageSync("userInfo").userId
-        ) {
-          uni.showToast({
-            title: "您不能回答自己的问题",
-            icon: "none",
-            duration: 2000,
-          });
-          return;
-        }
-        // TODO: 从服务器获取用户信誉分，这里暂时模拟
-        const userReputation = 100; // 模拟用户当前信誉分
-
-        if (userReputation < 90) {
-          uni.showToast({
-            title: "您现在信誉分过低，目前不能回答问题哦",
-            icon: "none",
-            duration: 2000,
-          });
-          return;
-        }
-
-        applyApi
-          .applyAnswerQuestion(question.value.questionId)
-          .then((result) => {
-            uni.showToast({
-              title: "申请成功",
-              icon: "success",
-            });
-            
-            setTimeout(() => {
-              uni.navigateBack();
-            }, 1000);
-
-          })
-          .catch((error) => {
-            console.error("申请失败:", error);
-          });
-      }
-    },
-  });
+const normalizeUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${BASE_URL}${url}`;
 };
 
-// 预览图片
+const getAuthorName = () => question.value.author?.account || "匿名用户";
+const getAuthorInitial = () => getAuthorName().slice(0, 1).toUpperCase();
+
+const authorAvatar = computed(() => normalizeUrl(question.value.author?.avatar || ""));
+
 const previewImage = (index) => {
   uni.previewImage({
     urls: question.value.images,
@@ -164,49 +111,127 @@ const previewImage = (index) => {
   });
 };
 
-onMounted(() => {
-  const pages = getCurrentPages();
-  const currentPage = pages[pages.length - 1];
-  const questionId = currentPage.$page?.options?.questionId || "1";
-  fromIndex.value = currentPage.$page?.options?.fromIndex === "true";
-  // 调用问题详情接口
-  questionApi
-    .getQuestionDetail(questionId)
-    .then((res) => {
-      // 处理返回的数据
-      const data = res.data;
-      // 处理图片URL，确保有完整路径
-      if (data.images && data.images.length) {
-        data.images = data.images.map((img) => {
-          return img.startsWith("http") ? img : `${BASE_URL}${img}`;
-        });
-      }
-      // 确保author对象存在
-      data.author = data.author || {};
-      // 确保tags是数组
-      data.tags = data.tags || [];
-      question.value = data;
-    })
-    .catch((err) => {
-      console.error("获取问题详情失败:", err);
+const loadQuestionDetail = async (questionId) => {
+  try {
+    const res = await questionApi.getQuestionDetail(questionId);
+    const data = res.data || {};
+
+    question.value = {
+      questionId: data.questionId || data._id || questionId,
+      title: data.title || "",
+      content: data.content || "",
+      category: data.category || "",
+      topic: data.topic || "",
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      reward: Number(data.reward || 0),
+      images: Array.isArray(data.images)
+        ? data.images.map((img) => normalizeUrl(img))
+        : [],
+      createTime: data.createTime || "",
+      author: {
+        _id: data.author?._id || data.author || "",
+        account: data.author?.account || "",
+        avatar: data.author?.avatar || "",
+      },
+    };
+  } catch (error) {
+    uni.showToast({
+      title: error.message || "获取问题详情失败",
+      icon: "none",
     });
+  }
+};
+
+const handleAnswer = () => {
+  if (isApplying.value) {
+    uni.showToast({
+      title: "正在提交申请，请稍候",
+      icon: "none",
+      duration: 2200,
+    });
+    return;
+  }
+
+  uni.showModal({
+    title: "申请回答",
+    content: "确定申请回答这个问题吗？",
+    success: async (res) => {
+      if (!res.confirm) return;
+
+      if (question.value.author._id === currentUser.value.userId) {
+        uni.showToast({
+          title: "不能申请回答自己的问题",
+          icon: "none",
+          duration: 2200,
+        });
+        return;
+      }
+
+      const userReputation = 100;
+      if (userReputation < 90) {
+        uni.showToast({
+          title: "当前信誉分过低，暂时不能申请回答",
+          icon: "none",
+          duration: 2200,
+        });
+        return;
+      }
+
+      try {
+        isApplying.value = true;
+        const response = await applyApi.applyAnswerQuestion(question.value.questionId);
+
+        uni.showToast({
+          title: response?.message || "申请成功",
+          icon: "success",
+          duration: 1800,
+        });
+
+        setTimeout(() => {
+          uni.navigateBack();
+        }, 900);
+      } catch (error) {
+        uni.showToast({
+          title: error.message || "申请失败，请稍后重试",
+          icon: "none",
+          duration: 2200,
+        });
+      } finally {
+        isApplying.value = false;
+      }
+    },
+  });
+};
+
+onLoad((options) => {
+  const questionId = options.questionId || "";
+  fromIndex.value = options.fromIndex === "true";
+
+  if (!questionId) {
+    uni.showToast({
+      title: "未找到问题信息",
+      icon: "none",
+    });
+    return;
+  }
+
+  loadQuestionDetail(questionId);
 });
 </script>
 
 <style lang="scss" scoped>
-.detail-container {
+.detail-page {
   min-height: 100vh;
-  background-color: #f5f7fa;
   padding: 24rpx;
-  padding-bottom: 140rpx;
+  padding-bottom: 150rpx;
 }
 
 .question-card {
-  background-color: #fff;
-  border-radius: 20rpx;
-  padding: 32rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  background: var(--app-surface);
+  border: 1rpx solid var(--app-card-border);
+  border-radius: 32rpx;
+  padding: 32rpx 28rpx;
+  box-shadow: var(--app-shadow-card);
 }
 
 .question-header {
@@ -214,146 +239,160 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 28rpx;
-  padding-bottom: 24rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  gap: 18rpx;
+}
 
-  .author-info {
-    display: flex;
-    align-items: center;
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-width: 0;
+}
 
-    .avatar {
-      width: 80rpx;
-      height: 80rpx;
-      border-radius: 50%;
-      margin-right: 20rpx;
-      background-color: #f0f0f0;
-    }
+.author-avatar-image,
+.author-avatar {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 24rpx;
+  flex-shrink: 0;
+}
 
-    .author-meta {
-      display: flex;
-      flex-direction: column;
+.author-avatar {
+  background: var(--app-primary-gradient);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 700;
+}
 
-      .author-name {
-        font-size: 30rpx;
-        font-weight: 500;
-        color: #333;
-      }
+.author-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 
-      .post-time {
-        font-size: 24rpx;
-        color: #999;
-        margin-top: 6rpx;
-      }
-    }
-  }
+.author-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--app-ink);
+}
 
-  .category-badge {
-    background-color: #e8f4ff;
-    color: #007aff;
-    padding: 8rpx 16rpx;
-    border-radius: 20rpx;
-    font-size: 24rpx;
-  }
+.post-time {
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
+  margin-top: 8rpx;
+}
+
+.category-badge {
+  flex-shrink: 0;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+  font-size: 22rpx;
 }
 
 .title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.5;
-  margin-bottom: 28rpx;
   display: block;
+  font-size: 38rpx;
+  font-weight: 700;
+  color: var(--app-ink);
+  line-height: 1.5;
+  margin-bottom: 24rpx;
 }
 
 .tags-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
-  margin-bottom: 32rpx;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+}
 
-  .tag {
-    background-color: #f5f5f5;
-    color: #666;
-    padding: 8rpx 20rpx;
-    border-radius: 20rpx;
-    font-size: 24rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.tag {
+  background: var(--app-neutral-chip-bg);
+  color: var(--app-ink-soft);
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
 }
 
 .reward-container {
   display: flex;
   align-items: center;
-  background-color: #fff7e6;
+  gap: 16rpx;
+  background: var(--app-input-bg);
+  border: 1rpx solid var(--app-line);
   padding: 20rpx;
-  border-radius: 12rpx;
-  margin-bottom: 32rpx;
+  border-radius: 24rpx;
+  margin-bottom: 28rpx;
+}
 
-  .reward-icon {
-    width: 48rpx;
-    height: 48rpx;
-    margin-right: 16rpx;
-  }
+.reward-icon {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 16rpx;
+  background: var(--app-warning-bg);
+  color: var(--app-warning-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 700;
+}
 
-  .reward-info {
-    display: flex;
-    flex-direction: column;
+.reward-info {
+  display: flex;
+  flex-direction: column;
+}
 
-    .reward-text {
-      font-size: 24rpx;
-      color: #ff9500;
-    }
+.reward-text {
+  font-size: 24rpx;
+  color: var(--app-warning-text);
+}
 
-    .reward-amount {
-      font-size: 36rpx;
-      font-weight: 600;
-      color: #ff9500;
-    }
-  }
+.reward-amount {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--app-warning-text);
 }
 
 .question-content {
-  margin-bottom: 32rpx;
+  margin-bottom: 28rpx;
   font-size: 30rpx;
-  color: #333;
-  line-height: 1.6;
+  color: var(--app-ink);
+  line-height: 1.8;
   padding: 24rpx;
-  background-color: #f9f9f9;
-  border-radius: 12rpx;
+  background: var(--app-input-bg);
+  border: 1rpx solid var(--app-line);
+  border-radius: 24rpx;
+}
 
-  .no-content {
-    color: #999;
-    text-align: center;
-    display: block;
-    padding: 40rpx 0;
-  }
+.no-content {
+  color: var(--app-ink-muted);
+  text-align: center;
+  display: block;
+  padding: 36rpx 0;
 }
 
 .image-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16rpx;
-  margin-bottom: 16rpx;
+  gap: 14rpx;
 }
 
 .image-item {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 12rpx;
+  border-radius: 20rpx;
   overflow: hidden;
-  background-color: #f0f0f0;
+  background-color: var(--app-surface-soft);
 }
 
 .question-image {
   width: 100%;
   height: 100%;
-  transition: transform 0.3s;
-}
-
-.question-image:active {
-  transform: scale(0.95);
 }
 
 .answer-section {
@@ -361,29 +400,24 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 24rpx;
-  background-color: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  padding: 22rpx 24rpx 28rpx;
+  background: var(--app-surface);
+  border-top: 1rpx solid var(--app-card-border);
+  backdrop-filter: blur(18rpx);
+}
 
-  .answer-btn {
-    width: 100%;
-    height: 96rpx;
-    background: linear-gradient(135deg, #007aff, #0062cc);
-    color: #fff;
-    font-size: 32rpx;
-    font-weight: 500;
-    border-radius: 48rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 6rpx 20rpx rgba(0, 122, 255, 0.3);
-    transition: all 0.2s;
-    border: none;
+.answer-btn {
+  width: 100%;
+  height: 96rpx;
+  border-radius: 999rpx;
+  background: var(--app-primary-gradient);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  box-shadow: var(--app-primary-shadow);
+}
 
-    &:active {
-      transform: translateY(3rpx);
-      box-shadow: 0 3rpx 10rpx rgba(0, 122, 255, 0.3);
-    }
-  }
+.answer-btn[disabled] {
+  opacity: 0.72;
 }
 </style>

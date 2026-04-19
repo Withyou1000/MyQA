@@ -1,20 +1,34 @@
 <template>
-  <view class="container">
-    <!-- 搜索栏 -->
-    <view class="search-bar">
-      <input
-        type="text"
-        placeholder="搜索"
-        class="search-input"
-        v-model="searchKeyword"
-        @confirm="handleSearch"
-      />
-      <GlobalNotification />
-      <text class="search-icon" @click="handleSearch">🔍</text>
+  <view class="home-page">
+    <view class="hero-card">
+      <view class="hero-copy">
+        <text class="hero-tag">今日灵感站</text>
+        <text class="hero-title">把问题交给社区</text>
+        <text class="hero-desc">
+          从编程到教育、从硬件到游戏，这里把提问和回答都做得更轻松一点。
+        </text>
+      </view>
+      <view class="hero-badge">
+        <text class="hero-badge-value">{{ questions.length }}</text>
+        <text class="hero-badge-label">当前结果</text>
+      </view>
     </view>
 
-    <!-- 分类列表 -->
-    <scroll-view class="category-list" scroll-x>
+    <view class="search-card">
+      <view class="search-input-wrap">
+        <input
+          type="text"
+          placeholder="搜一搜你关心的问题"
+          class="search-input"
+          v-model="searchKeyword"
+          @confirm="handleSearch"
+        />
+        <text class="search-icon" @click="handleSearch">搜索</text>
+      </view>
+      <GlobalNotification />
+    </view>
+
+    <scroll-view class="category-list" scroll-x show-scrollbar="false">
       <view
         v-for="(category, index) in categories"
         :key="index"
@@ -26,14 +40,16 @@
       </view>
     </scroll-view>
 
-    <!-- 问题列表 -->
+    <view class="section-head">
+      <text class="section-title">{{ selectedCategory || "推荐问答" }}</text>
+      <text class="section-meta">{{ questions.length }} 条内容</text>
+    </view>
+
     <view class="question-list">
-      <!-- 加载中 -->
       <view class="loading" v-if="loading">
         <uni-load-more status="loading" />
       </view>
 
-      <!-- 问题列表 -->
       <view
         v-else-if="questions.length > 0"
         v-for="question in questions"
@@ -41,29 +57,32 @@
         class="question-item"
         @click="goToQuestionDetail(question)"
       >
-        <view class="question-content">
-          <text class="title">{{ question.title }}</text>
-          <view class="tags">
-            <text class="tag topic-tag">{{ question.topic }}</text>
-            <text
-              v-for="(tag, tagIndex) in question.tags"
-              :key="tagIndex"
-              class="tag"
-              >{{ tag }}</text
-            >
+        <view class="question-top">
+          <view class="author-pill">
+            <view class="author-avatar">{{ getAuthorInitial(question) }}</view>
+            <text class="author-name">{{ getAuthorName(question) }}</text>
           </view>
+          <view class="reward-pill">{{ formatReward(question.reward) }}</view>
         </view>
-        <view class="question-info">
-          <view class="left">
-            <text class="author">{{ question.author.account }}</text>
-          </view>
-          <text class="reward">{{ question.reward }}元</text>
+
+        <text class="title">{{ question.title }}</text>
+
+        <view class="tags">
+          <text class="tag topic-tag">{{ question.topic || "未分类" }}</text>
+          <text v-for="(tag, tagIndex) in question.tags || []" :key="tagIndex" class="tag">
+            {{ tag }}
+          </text>
+        </view>
+
+        <view class="question-footer">
+          <text class="footer-note">点击查看详情并参与互动</text>
+          <text class="footer-action">去看看</text>
         </view>
       </view>
 
-      <!-- 空状态 -->
       <view class="empty" v-else>
-        <text>暂无相关问题</text>
+        <text class="empty-title">暂时没有匹配的问题</text>
+        <text class="empty-desc">换个关键词试试，或者切换别的主题看看。</text>
       </view>
     </view>
   </view>
@@ -72,13 +91,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { questionApi, applyApi } from "@/api";
-import { onShow } from "@dcloudio/uni-app";
-import { onPullDownRefresh } from '@dcloudio/uni-app';
+import { onShow, onPullDownRefresh } from "@dcloudio/uni-app";
 
-// 分类列表
 const categories = ref(["编程", "教育", "硬件", "游戏", "动画", "其他"]);
 
-// 问题列表数据
 const questions = ref([
   {
     questionId: 1,
@@ -86,7 +102,7 @@ const questions = ref([
     topic: "编程",
     tags: ["Vue", "前端"],
     status: "answered",
-    author: { account: "开发者1" },
+    author: { account: "开发者" },
     reward: 20,
   },
   {
@@ -126,10 +142,20 @@ const questions = ref([
     reward: 40,
   },
 ]);
+
 const loading = ref(false);
 const selectedCategory = ref("编程");
+const searchKeyword = ref("");
 
-// 加载问题列表
+const getAuthorName = (question) => question?.author?.account || "匿名用户";
+
+const getAuthorInitial = (question) => {
+  const name = getAuthorName(question);
+  return name.slice(0, 1).toUpperCase();
+};
+
+const formatReward = (reward) => `${reward || 0}元`;
+
 const loadQuestions = async (topic) => {
   try {
     loading.value = true;
@@ -145,23 +171,20 @@ const loadQuestions = async (topic) => {
       });
       return;
     }
-    questions.value = res.data?.list || []; // 确保questions始终是数组
+    questions.value = res.data?.list || [];
   } catch (error) {
     uni.showToast({
       title: error.message || "加载失败",
       icon: "none",
     });
-    questions.value = []; // 出错时也设置为空数组
+    questions.value = [];
   } finally {
     loading.value = false;
   }
 };
 
-// 分类点击处理
 const handleCategoryClick = async (category) => {
   try {
-    // 如果点击已选中的分类，则取消选中
-    // 直接选中新分类
     selectedCategory.value = category;
     await loadQuestions(category);
   } catch (error) {
@@ -172,14 +195,12 @@ const handleCategoryClick = async (category) => {
   }
 };
 
-// 跳转到问题详情
 const goToQuestionDetail = (question) => {
   uni.navigateTo({
     url: `/pages/question/detail?questionId=${question.questionId}&fromIndex=true`,
   });
 };
 
-// 页面加载时获取全部问题
 onMounted(() => {
   load();
 });
@@ -193,20 +214,16 @@ const load = async () => {
   const userId = uni.getStorageSync("userInfo").userId;
   applyApi.verifyApplyAcceptStatus(userId).then((res) => {
     if (res.data.length > 0) {
-      // 清空现有通知
       uni.$emit("clearGlobalNotifications");
-      // 发送所有通知
       res.data.forEach((item) => {
         uni.$emit("showGlobalNotification", {
-          id: item.questionId, // 使用唯一ID
+          id: item.questionId,
           text: `${item.answererName}用户向你发送了采纳申请，点击跳转`,
         });
       });
     }
   });
 };
-
-const searchKeyword = ref("");
 
 const handleSearch = async () => {
   if (!searchKeyword.value.trim()) {
@@ -227,171 +244,297 @@ const handleSearch = async () => {
   }
 };
 
-// 在script setup部分添加
 onPullDownRefresh(async () => {
   await loadQuestions(selectedCategory.value);
-  uni.stopPullDownRefresh(); // 必须调用停止刷新
+  uni.stopPullDownRefresh();
 });
 </script>
 
 <style lang="scss" scoped>
-.container {
+.home-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  padding-bottom: 40rpx;
-  box-sizing: border-box;
+  padding: 28rpx 24rpx 42rpx;
+  background: var(--app-page-bg);
 }
 
-.search-bar {
-  position: relative;
-  padding: 20rpx 40rpx;
-  background-color: #fff;
+.hero-card {
+  display: flex;
+  gap: 20rpx;
+  padding: 34rpx 28rpx;
+  border-radius: var(--app-radius-xl);
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
+  box-shadow: var(--app-shadow-soft);
+}
 
-  .search-input {
-    width: 100%;
-    height: 80rpx;
-    background: #f5f5f5;
-    border-radius: 40rpx;
-    padding: 0 80rpx 0 40rpx;
-    font-size: 28rpx;
-    color: #333;
-    border: none;
-  }
+.hero-copy {
+  flex: 1;
+}
 
-  .search-icon {
-    position: absolute;
-    right: 60rpx;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 32rpx;
-    color: #999;
-  }
+.hero-tag {
+  display: inline-flex;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-surface-alt);
+  border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+}
+
+.hero-title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 46rpx;
+  font-weight: 700;
+}
+
+.hero-desc {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  opacity: 0.9;
+}
+
+.hero-badge {
+  width: 156rpx;
+  min-height: 156rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface-alt);
+  border: 1rpx solid var(--app-card-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12rpx);
+}
+
+.hero-badge-value {
+  font-size: 54rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hero-badge-label {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+}
+
+.search-card {
+  margin-top: 22rpx;
+  padding: 22rpx;
+  border-radius: 28rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+}
+
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  height: 84rpx;
+  padding: 0 18rpx 0 24rpx;
+  border-radius: 24rpx;
+  background: var(--app-input-bg);
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--app-ink);
+}
+
+.search-icon {
+  min-width: 94rpx;
+  height: 58rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 127, 150, 0.14);
+  color: var(--app-accent-strong);
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .category-list {
-  padding: 20rpx 0;
+  margin-top: 18rpx;
+  height: 80rpx;
   white-space: nowrap;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  scrollbar-width: none;
+  overflow: hidden;
+}
 
-  .category-item {
-    display: inline-block;
-    padding: 20rpx 40rpx;
-    transition: all 0.3s ease;
+.category-list ::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
 
-    &.active {
-      color: #ff6b6b;
-      font-weight: 500;
-      position: relative;
+.category-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
+  padding: 16rpx 30rpx;
+  border-radius: 999rpx;
+  background: var(--app-surface-alt);
+  color: var(--app-ink-soft);
+  box-shadow: 0 10rpx 24rpx rgba(218, 178, 165, 0.12);
+}
 
-      &::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 40rpx;
-        height: 4rpx;
-        background: #ff6b6b;
-        border-radius: 2rpx;
-      }
-    }
+.category-item.active {
+  background: var(--app-primary-gradient);
+  color: #fff;
+}
 
-    .category-text {
-      font-size: 28rpx;
-      color: inherit;
-    }
-  }
+.category-text {
+  font-size: 25rpx;
+  font-weight: 500;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 26rpx 4rpx 18rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.section-meta {
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
 }
 
 .question-list {
-  padding: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
 
-  .loading {
-    padding: 40rpx 0;
-    text-align: center;
-  }
+.question-item {
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+}
 
-  .question-item {
-    background-color: #fff;
-    border-radius: 12rpx;
-    padding: 30rpx;
-    margin-bottom: 20rpx;
+.question-top,
+.question-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
 
-    &:active {
-      background-color: #f9f9f9;
-    }
+.author-pill {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
 
-    .question-content {
-      .title {
-        font-size: 28rpx;
-        color: #333;
-        line-height: 1.5;
-        margin-bottom: 16rpx;
-      }
+.author-avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(135deg, #ffd5b4 0%, #ff91a7 100%);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-      .tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12rpx;
-        margin-bottom: 20rpx;
+.author-name {
+  font-size: 24rpx;
+  color: var(--app-ink-soft);
+}
 
-        .tag {
-          font-size: 22rpx;
-          color: #666;
-          background: #f5f5f5;
-          padding: 4rpx 16rpx;
-          border-radius: 4rpx;
+.reward-pill {
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-success-bg);
+  color: var(--app-success-text);
+  font-size: 22rpx;
+  font-weight: 600;
+}
 
-          &.topic-tag {
-            color: #ff6b6b;
-            background: rgba(255, 107, 107, 0.1);
-          }
-        }
-      }
-    }
+.title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 31rpx;
+  line-height: 1.65;
+  color: var(--app-ink);
+  font-weight: 600;
+}
 
-    .question-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 20rpx;
+}
 
-      .left {
-        display: flex;
-        align-items: center;
-        gap: 16rpx;
+.tag {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-surface-soft);
+  color: var(--app-ink-soft);
+  font-size: 22rpx;
+}
 
-        .status {
-          font-size: 24rpx;
+.topic-tag {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
 
-          &.pending {
-            color: #ff9500;
-          }
+.question-footer {
+  margin-top: 22rpx;
+}
 
-          &.answered {
-            color: #34c759;
-          }
-        }
+.footer-note {
+  font-size: 22rpx;
+  color: var(--app-ink-muted);
+}
 
-        .author {
-          font-size: 24rpx;
-          color: #999;
-        }
-      }
+.footer-action {
+  font-size: 24rpx;
+  color: var(--app-accent-strong);
+  font-weight: 600;
+}
 
-      .reward {
-        font-size: 28rpx;
-        color: #ff6b6b;
-        font-weight: 500;
-      }
-    }
-  }
+.loading {
+  padding: 40rpx 0;
+  text-align: center;
+}
 
-  .empty {
-    padding: 100rpx 0;
-    text-align: center;
-    color: #999;
-    font-size: 28rpx;
-  }
+.empty {
+  padding: 90rpx 34rpx;
+  border-radius: 30rpx;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+  text-align: center;
+}
+
+.empty-title {
+  display: block;
+  font-size: 30rpx;
+  color: var(--app-ink);
+  font-weight: 600;
+}
+
+.empty-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: var(--app-ink-muted);
 }
 </style>

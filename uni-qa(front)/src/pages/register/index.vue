@@ -1,306 +1,337 @@
 <template>
-  <view class="register-container">
-    <view class="welcome-text">创建账号</view>
-    
-    <view class="form-container">
-      <input
-        class="input-field"
-        type="text"
-        v-model="account"
-        placeholder="请输入账号"
-        @focus="handleFocus"
-        @blur="handleBlur"
-      />
-      
-      <input
-        class="input-field"
-        type="password"
-        v-model="password"
-        placeholder="请输入密码"
-        @focus="handleFocus"
-        @blur="handleBlur"
-      />
-      
-      <input
-        class="input-field"
-        type="password"
-        v-model="confirmPassword"
-        placeholder="请确认密码"
-        @focus="handleFocus"
-        @blur="handleBlur"
-      />
+  <view class="register-page">
+    <view class="hero-card">
+      <text class="eyebrow">Create Account</text>
+      <text class="hero-title">把你的问答小屋搭起来</text>
+      <text class="hero-desc">注册后就可以提问、接单、聊天，也能慢慢积累自己的信誉值。</text>
+    </view>
 
-      <input
-        class="input-field"
-        type="number"
-        v-model="phone"
-        placeholder="请输入手机号"
-        maxlength="11"
-        @focus="handleFocus"
-        @blur="handleBlur"
-      />
-
-      <view class="code-input-wrapper">
+    <view class="form-card">
+      <view class="field-grid">
         <input
-          class="input-field code-input"
-          type="number"
-          v-model="code"
-          placeholder="请输入验证码"
-          maxlength="6"
+          class="input-field"
+          type="text"
+          v-model="account"
+          placeholder="请输入账号"
           @focus="handleFocus"
           @blur="handleBlur"
         />
-        <text 
-          class="code-btn" 
-          :class="{ disabled: counting }"
-          @click="sendCode"
-        >
-          {{ counting ? `${countdown}s` : '获取验证码' }}
-        </text>
+
+        <input
+          class="input-field"
+          type="password"
+          v-model="password"
+          placeholder="请输入密码"
+          @focus="handleFocus"
+          @blur="handleBlur"
+        />
+
+        <input
+          class="input-field"
+          type="password"
+          v-model="confirmPassword"
+          placeholder="请确认密码"
+          @focus="handleFocus"
+          @blur="handleBlur"
+        />
+
+        <input
+          class="input-field"
+          type="number"
+          v-model="phone"
+          placeholder="请输入手机号"
+          maxlength="11"
+          @focus="handleFocus"
+          @blur="handleBlur"
+        />
+
+        <view class="code-input-wrapper">
+          <input
+            class="input-field code-input"
+            type="number"
+            v-model="code"
+            placeholder="请输入验证码"
+            maxlength="6"
+            @focus="handleFocus"
+            @blur="handleBlur"
+          />
+          <text class="code-btn" :class="{ disabled: counting }" @click="sendCode">
+            {{ counting ? `${countdown}s` : "获取验证码" }}
+          </text>
+        </view>
       </view>
-      
+
       <button class="register-btn" @click="handleRegister">立即注册</button>
-      
-      <view class="login-link" @click="goToLogin">已有账号？立即登录</view>
+
+      <view class="tips-row">
+        <text class="tip-chip">新人友好</text>
+        <text class="tip-chip">轻松聊天</text>
+        <text class="tip-chip">个性主页</text>
+      </view>
+
+      <view class="login-link" @click="goToLogin">已有账号？返回登录</view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { authApi } from '@/api/auth.js'
+import { ref } from "vue";
+import { authApi } from "@/api/auth.js";
 
-const account = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const phone = ref('')
-const code = ref('')
-const counting = ref(false)
-const countdown = ref(60)
+const account = ref("");
+const password = ref("");
+const confirmPassword = ref("");
+const phone = ref("");
+const code = ref("");
+const counting = ref(false);
+const countdown = ref(60);
 
 const handleFocus = (event) => {
   if (event.target) {
-    event.target.classList?.add('input-focus')
+    event.target.classList?.add("input-focus");
   }
-}
+};
 
 const handleBlur = (event) => {
   if (event.target) {
-    event.target.classList?.remove('input-focus')
+    event.target.classList?.remove("input-focus");
   }
-}
+};
 
-// 发送验证码
 const sendCode = () => {
-  if (counting.value) return
-  
+  if (counting.value) return;
+
   if (!phone.value || phone.value.length !== 11) {
     uni.showToast({
-      title: '请输入正确的手机号',
-      icon: 'none'
-    })
-    return
+      title: "请输入正确的手机号",
+      icon: "none",
+    });
+    return;
   }
-  
-  // 模拟发送验证码
-  const mockCode = '123456' // 模拟一个固定的验证码
+
+  const mockCode = "123456";
   uni.showModal({
-    title: '模拟验证码',
+    title: "模拟验证码",
     content: `您的验证码是：${mockCode}`,
     showCancel: false,
     success: () => {
-      // 自动填入验证码
-      code.value = mockCode
-      
-      // 开始倒计时
-      counting.value = true
-      countdown.value = 60
-      
+      code.value = mockCode;
+      counting.value = true;
+      countdown.value = 60;
+
       const timer = setInterval(() => {
-        countdown.value--
+        countdown.value -= 1;
         if (countdown.value <= 0) {
-          clearInterval(timer)
-          counting.value = false
+          clearInterval(timer);
+          counting.value = false;
         }
-      }, 1000)
-    }
-  })
-}
+      }, 1000);
+    },
+  });
+};
 
 const handleRegister = async () => {
   if (!account.value || !password.value || !confirmPassword.value) {
     uni.showToast({
-      title: '请填写完整信息',
-      icon: 'none'
-    })
-    return
+      title: "请填写完整信息",
+      icon: "none",
+    });
+    return;
   }
-  
+
   if (password.value !== confirmPassword.value) {
     uni.showToast({
-      title: '两次输入的密码不一致',
-      icon: 'none'
-    })
-    return
+      title: "两次输入的密码不一致",
+      icon: "none",
+    });
+    return;
   }
 
-  //if (phone.value.length !== 11) {
-   // uni.showToast({
-    //  title: '请输入正确的手机号',
-    //  icon: 'none'
-   // })
-  //  return
- // }
-
- // if (code.value.length !== 6) {
-    //uni.showToast({
-    //  title: '请输入6位验证码',
-    //  icon: 'none'
-  //  })
-  //  return
- // }
-  
   try {
-    const res = await authApi.register({
-      account: account.value,
-      password: password.value
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
+    const res = await authApi.register(
+      {
+        account: account.value,
+        password: password.value,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
-    })
-    
+    );
+
     if (res?.code === 200) {
       uni.showToast({
-        title: '注册成功',
-        icon: 'success',
+        title: "注册成功",
+        icon: "success",
         duration: 2000,
         success: () => {
           setTimeout(() => {
-            uni.navigateBack()
-          }, 2000)
-        }
-      })
+            uni.navigateBack();
+          }, 2000);
+        },
+      });
     } else {
       uni.showToast({
-        title: res?.message || '注册失败',
-        icon: 'none'
-      })
+        title: res?.message || "注册失败",
+        icon: "none",
+      });
     }
   } catch (error) {
-    console.error('注册接口错误:', error)
+    console.error("注册接口错误:", error);
     uni.showToast({
-      title: error.message || '网络错误，请重试',
-      icon: 'none'
-    })
+      title: error.message || "网络错误，请重试",
+      icon: "none",
+    });
   }
-}
+};
 
 const goToLogin = () => {
-  uni.navigateBack()
-}
+  uni.navigateBack();
+};
 </script>
 
 <style lang="scss" scoped>
-.register-container {
-  padding: 40rpx;
+.register-page {
   min-height: 100vh;
-  background-color: #fff;
-  
-  .welcome-text {
-    font-size: 48rpx;
-    font-weight: bold;
-    margin: 80rpx 0;
-    color: #333;
-  }
-  
-  .form-container {
-    margin-top: 40rpx;
-    
-    .input-field {
-      width: 100%;
-      height: 96rpx;
-      background: #f5f5f5;
-      border-radius: 16rpx;
-      margin-bottom: 32rpx;
-      padding: 0 32rpx;
-      font-size: 32rpx;
-      color: #333;
-      border: 2rpx solid transparent;
-      box-sizing: border-box;
-      transition: all 0.3s ease;
-      
-      &::placeholder {
-        color: #999;
-      }
-      
-      &.input-focus {
-        border-color: #007AFF;
-        background-color: #fff;
-        box-shadow: 0 0 0 2rpx rgba(0,122,255,0.1);
-      }
+  padding: 36rpx 30rpx 60rpx;
+}
 
-      &.code-input {
-        margin-bottom: 0;
-      }
-    }
+.hero-card {
+  padding: 36rpx 32rpx;
+  border-radius: var(--app-radius-xl);
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  border: 1rpx solid var(--app-card-border);
+  box-shadow: var(--app-shadow-soft);
+  color: var(--app-hero-text);
+}
 
-    .code-input-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 20rpx;
-      margin-bottom: 32rpx;
-      
-      .input-field {
-        flex: 1;
-      }
-      
-      .code-btn {
-        width: 200rpx;
-        height: 96rpx;
-        background: #007AFF;
-        border-radius: 16rpx;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28rpx;
-        color: #fff;
-        
-        &.disabled {
-          background: #ccc;
-        }
-        
-        &:active {
-          opacity: 0.9;
-        }
-      }
-    }
-    
-    .register-btn {
-      width: 100%;
-      height: 96rpx;
-      background: #007AFF;
-      border-radius: 16rpx;
-      color: #fff;
-      font-size: 32rpx;
-      font-weight: 500;
-      margin-top: 48rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      
-      &:active {
-        opacity: 0.9;
-      }
-    }
-    
-    .login-link {
-      text-align: center;
-      margin-top: 32rpx;
-      color: #007AFF;
-      font-size: 28rpx;
-    }
+.eyebrow {
+  display: inline-flex;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-accent-badge-bg);
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+}
+
+.hero-title {
+  display: block;
+  margin-top: 22rpx;
+  font-size: 46rpx;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.hero-desc {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  opacity: 0.92;
+}
+
+.form-card {
+  margin-top: 26rpx;
+  padding: 34rpx 28rpx 40rpx;
+  border-radius: var(--app-radius-xl);
+  background: var(--app-surface);
+  border: 1rpx solid var(--app-card-border);
+  box-shadow: var(--app-shadow-card);
+}
+
+.field-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.input-field {
+  width: 100%;
+  height: 96rpx;
+  padding: 0 28rpx;
+  background: var(--app-input-bg);
+  border-radius: 26rpx;
+  border: 2rpx solid var(--app-line);
+  font-size: 30rpx;
+  color: var(--app-ink);
+  transition: all 0.25s ease;
+
+  &::placeholder {
+    color: var(--app-ink-muted);
   }
+
+  &.input-focus {
+    border-color: var(--app-accent);
+    background: var(--app-cream-strong);
+    box-shadow: 0 0 0 6rpx color-mix(in srgb, var(--app-accent) 10%, transparent);
+  }
+
+  &.code-input {
+    margin-bottom: 0;
+  }
+}
+
+.code-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.code-input-wrapper .input-field {
+  flex: 1;
+}
+
+.code-btn {
+  width: 220rpx;
+  height: 96rpx;
+  border-radius: 24rpx;
+  background: var(--app-primary-gradient);
+  color: #fff;
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--app-primary-shadow);
+}
+
+.code-btn.disabled {
+  background: var(--app-neutral-chip-bg);
+  color: var(--app-ink-muted);
+  box-shadow: none;
+}
+
+.register-btn {
+  width: 100%;
+  height: 96rpx;
+  margin-top: 34rpx;
+  border-radius: 999rpx;
+  background: var(--app-primary-gradient);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  box-shadow: var(--app-primary-shadow);
+}
+
+.tips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 26rpx;
+}
+
+.tip-chip {
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+  font-size: 22rpx;
+}
+
+.login-link {
+  margin-top: 26rpx;
+  text-align: center;
+  color: var(--app-accent-strong);
+  font-size: 26rpx;
 }
 </style>

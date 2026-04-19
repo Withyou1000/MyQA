@@ -1,11 +1,23 @@
 <template>
-  <view class="login-container">
-    <view class="login-header">
-      <image class="logo" src="/static/images/logo.png" mode="aspectFit" />
-      <text class="title">问答社区</text>
+  <view class="login-page">
+    <view class="decor decor-left" />
+    <view class="decor decor-right" />
+
+    <view class="hero-card">
+      <view class="hero-copy">
+        <text class="eyebrow">MyQA</text>
+        <text class="title">欢迎回来</text>
+        <text class="subtitle">把问题和灵感都交给这里，轻松一点，交流也更有温度。</text>
+      </view>
+      <image class="logo" src="/static/logo.png" mode="aspectFit" />
     </view>
 
-    <view class="login-form">
+    <view class="form-card">
+      <view class="card-head">
+        <text class="card-title">账号登录</text>
+        <text class="card-desc">继续你的问答、聊天和成长记录</text>
+      </view>
+
       <view class="input-group">
         <text class="label">账号</text>
         <input type="text" v-model="account" placeholder="请输入账号" class="input" />
@@ -18,8 +30,8 @@
 
       <button class="login-btn" @click="handleLogin">登录</button>
 
-      <view class="register-link" @click="goToRegister">
-        没有账号？立即注册
+      <view class="helper-row">
+        <view class="register-link" @click="goToRegister">没有账号？立即注册</view>
       </view>
 
       <view class="agreement">
@@ -40,7 +52,6 @@ import { authApi } from "@/api/auth.js";
 const account = ref("");
 const password = ref("");
 
-// 处理登录
 const handleLogin = async () => {
   if (!account.value) {
     uni.showToast({
@@ -70,14 +81,11 @@ const handleLogin = async () => {
 
       uni.initWebSocket();
 
-      // 根据用户角色跳转到不同页面
-      if (userInfo.data.role === 'customer_service') {
-        // 客服跳转到客服工作台
+      if (userInfo.data.role === "customer_service") {
         uni.reLaunch({
           url: "/pages/customer-service/index",
         });
       } else {
-        // 普通用户跳转到首页
         uni.reLaunch({
           url: "/pages/index/index",
         });
@@ -97,25 +105,20 @@ const handleLogin = async () => {
   }
 };
 
-// 查看用户协议
 const showAgreement = () => {
-  // TODO: 跳转到用户协议页面
   uni.showToast({
     title: "用户协议",
     icon: "none",
   });
 };
 
-// 查看隐私政策
 const showPrivacy = () => {
-  // TODO: 跳转到隐私政策页面
   uni.showToast({
     title: "隐私政策",
     icon: "none",
   });
 };
 
-// 跳转到注册页面
 const goToRegister = () => {
   uni.navigateTo({
     url: "/pages/register/index",
@@ -124,90 +127,176 @@ const goToRegister = () => {
 </script>
 
 <style lang="scss" scoped>
-.login-container {
+.login-page {
+  position: relative;
   min-height: 100vh;
-  background-color: #fff;
-  padding: 60rpx 40rpx;
+  padding: 36rpx 30rpx 60rpx;
+  overflow: hidden;
+}
 
-  .login-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 80rpx;
+.decor {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(4rpx);
+}
 
-    .logo {
-      width: 160rpx;
-      height: 160rpx;
-      margin-bottom: 20rpx;
-    }
+.decor-left {
+  width: 280rpx;
+  height: 280rpx;
+  top: 30rpx;
+  left: -90rpx;
+  background: color-mix(in srgb, var(--app-peach) 26%, transparent);
+}
 
-    .title {
-      font-size: 40rpx;
-      font-weight: 600;
-      color: #333;
-    }
-  }
+.decor-right {
+  width: 220rpx;
+  height: 220rpx;
+  top: 260rpx;
+  right: -70rpx;
+  background: color-mix(in srgb, var(--app-accent) 18%, transparent);
+}
 
-  .login-form {
-    .input-group {
-      margin-bottom: 40rpx;
+.hero-card,
+.form-card {
+  position: relative;
+  z-index: 1;
+}
 
-      .label {
-        font-size: 28rpx;
-        color: #333;
-        margin-bottom: 20rpx;
-        display: block;
-      }
+.hero-card {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 34rpx 30rpx;
+  border-radius: var(--app-radius-xl);
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  border: 1rpx solid var(--app-card-border);
+  box-shadow: var(--app-shadow-card);
+}
 
-      .input {
-        width: 100%;
-        height: 88rpx;
-        background: #f5f5f5;
-        border-radius: 12rpx;
-        padding: 0 30rpx;
-        font-size: 32rpx;
-        color: #333;
-      }
-    }
+.hero-copy {
+  flex: 1;
+}
 
-    .login-btn {
-      width: 100%;
-      height: 88rpx;
-      background: #007aff;
-      border-radius: 44rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32rpx;
-      color: #fff;
-      margin: 60rpx 0;
+.eyebrow {
+  display: inline-block;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+}
 
-      &:active {
-        opacity: 0.9;
-      }
-    }
+.title {
+  display: block;
+  margin-top: 20rpx;
+  font-size: 52rpx;
+  font-weight: 700;
+  color: var(--app-ink);
+}
 
-    .register-link {
-      text-align: center;
-      font-size: 28rpx;
-      color: #007aff;
-      margin-bottom: 40rpx;
+.subtitle {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  line-height: 1.8;
+  color: var(--app-ink-soft);
+}
 
-      &:active {
-        opacity: 0.8;
-      }
-    }
+.logo {
+  width: 144rpx;
+  height: 144rpx;
+  padding: 22rpx;
+  border-radius: 36rpx;
+  background: var(--app-input-bg);
+  border: 1rpx solid var(--app-card-border);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.45);
+}
 
-    .agreement {
-      text-align: center;
-      font-size: 24rpx;
-      color: #999;
+.form-card {
+  margin-top: 28rpx;
+  padding: 34rpx 30rpx 40rpx;
+  border-radius: var(--app-radius-xl);
+  background: var(--app-surface);
+  border: 1rpx solid var(--app-card-border);
+  box-shadow: var(--app-shadow-card);
+  backdrop-filter: blur(18rpx);
+}
 
-      .link {
-        color: #007aff;
-        display: inline;
-      }
-    }
-  }
+.card-head {
+  margin-bottom: 24rpx;
+}
+
+.card-title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--app-ink);
+}
+
+.card-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--app-ink-soft);
+}
+
+.input-group {
+  margin-bottom: 24rpx;
+}
+
+.label {
+  display: block;
+  margin-bottom: 14rpx;
+  font-size: 25rpx;
+  color: var(--app-ink-soft);
+}
+
+.input {
+  width: 100%;
+  height: 96rpx;
+  padding: 0 28rpx;
+  background: var(--app-input-bg);
+  border: 2rpx solid var(--app-line);
+  border-radius: 26rpx;
+  font-size: 30rpx;
+  color: var(--app-ink);
+  box-shadow: inset 0 2rpx 6rpx rgba(255, 255, 255, 0.45);
+}
+
+.login-btn {
+  width: 100%;
+  height: 94rpx;
+  margin-top: 18rpx;
+  border-radius: 999rpx;
+  background: var(--app-primary-gradient);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  box-shadow: var(--app-primary-shadow);
+}
+
+.helper-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 28rpx;
+}
+
+.register-link {
+  font-size: 26rpx;
+  color: var(--app-accent-strong);
+}
+
+.agreement {
+  margin-top: 30rpx;
+  text-align: center;
+  font-size: 22rpx;
+  line-height: 1.7;
+  color: var(--app-ink-muted);
+}
+
+.link {
+  color: var(--app-accent-strong);
+  display: inline;
 }
 </style>

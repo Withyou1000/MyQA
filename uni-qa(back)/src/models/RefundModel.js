@@ -1,59 +1,62 @@
 const mongoose = require('mongoose');
 
 const RefundSchema = new mongoose.Schema({
-  // 关联的问题ID
   questionId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Question',
-    required: true
+    required: true,
   },
-  
-  // 关联的申请退款的用户ID
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
   },
-  // 退款金额
   amount: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
   },
-  // 退款原因
+  maxAmount: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   reason: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
   },
-  // 退款凭证（图片URL数组）
   proofs: {
     type: [String],
-    default: []
+    default: [],
   },
-  // 补充描述
   description: {
     type: String,
-    maxlength: 500
+    default: '',
+    maxlength: 500,
   },
-  // 退款状态
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    enum: ['pending', 'refunded', 'rejected'],
+    default: 'pending',
   },
-  // 申请时间
   applyTime: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
-  // 处理时间
   processTime: {
-    type: Date
+    type: Date,
+    default: null,
   },
-  // 处理备注
+  processorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   processRemark: {
-    type: String
-  }
+    type: String,
+    default: '',
+  },
 });
 
 module.exports = mongoose.model('Refund', RefundSchema);
