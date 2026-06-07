@@ -3,7 +3,10 @@
  */
 
 // API根路径
-export const BASE_URL = 'http://192.168.110.173:3000'
+export const BASE_URL = 'http://10.159.26.34:3000'
+
+// WebSocket根路径
+export const WS_URL = 'ws://10.159.26.34:3000'
 
 
 /**

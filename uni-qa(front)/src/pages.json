@@ -11,7 +11,7 @@
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "问答",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black",
         "enablePullDownRefresh": true
       }
@@ -20,7 +20,7 @@
       "path": "pages/login/index",
       "style": {
         "navigationBarTitleText": "登录",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -28,7 +28,7 @@
       "path": "pages/register/index",
       "style": {
         "navigationBarTitleText": "注册",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -36,7 +36,7 @@
       "path": "pages/question/detail",
       "style": {
         "navigationBarTitleText": "",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -44,7 +44,7 @@
       "path": "pages/chat/index",
       "style": {
         "navigationBarTitleText": "",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -52,7 +52,7 @@
       "path": "pages/message/index",
       "style": {
         "navigationBarTitleText": "消息中心",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -60,7 +60,7 @@
       "path": "pages/ask/index",
       "style": {
         "navigationBarTitleText": "提问",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -68,7 +68,7 @@
       "path": "pages/profile/index",
       "style": {
         "navigationBarTitleText": "个人中心",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -76,7 +76,7 @@
       "path": "pages/profile/my-questions",
       "style": {
         "navigationBarTitleText": "我的提问",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -84,7 +84,7 @@
       "path": "pages/profile/my-answers",
       "style": {
         "navigationBarTitleText": "我的回答",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -92,7 +92,7 @@
       "path": "pages/profile/vip",
       "style": {
         "navigationBarTitleText": "开通会员",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -100,7 +100,7 @@
       "path": "pages/profile/application-list",
       "style": {
         "navigationBarTitleText": "申请列表",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -108,7 +108,7 @@
       "path": "pages/profile/user-detail",
       "style": {
         "navigationBarTitleText": "用户详情",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -116,7 +116,7 @@
       "path": "pages/profile/rating",
       "style": {
         "navigationBarTitleText": "评价体验",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -124,7 +124,7 @@
       "path": "pages/profile/rating-detail",
       "style": {
         "navigationBarTitleText": "评价详情",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -132,7 +132,7 @@
       "path": "pages/profile/refund",
       "style": {
         "navigationBarTitleText": "申请退款",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -140,7 +140,7 @@
       "path": "pages/profile/refund-detail",
       "style": {
         "navigationBarTitleText": "退款详情",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -148,7 +148,7 @@
       "path": "pages/profile/edit-profile",
       "style": {
         "navigationBarTitleText": "编辑资料",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -156,7 +156,7 @@
       "path": "pages/profile/settings",
       "style": {
         "navigationBarTitleText": "设置",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
@@ -164,15 +164,14 @@
       "path": "pages/profile/theme-settings",
       "style": {
         "navigationBarTitleText": "主题外观",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     },
     {
       "path": "pages/customer-service/index",
       "style": {
-        "navigationBarTitleText": "客服工作台",
-        "navigationBarBackgroundColor": "#ff8ea1",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "white"
       }
     },
@@ -180,51 +179,15 @@
       "path": "pages/customer-service/transaction-detail",
       "style": {
         "navigationBarTitleText": "交易详情",
-        "navigationBarBackgroundColor": "#fff7f3",
+        "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black"
       }
     }
   ],
-  "tabBar": {
-    "color": "#9a8790",
-    "selectedColor": "#ff7f96",
-    "backgroundColor": "#fff8f5",
-    "borderStyle": "white",
-    "fontSize": "12px",
-    "iconWidth": "24px",
-    "spacing": "3px",
-    "height": "52px",
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "问答",
-        "iconPath": "/static/images/tab-question.svg",
-        "selectedIconPath": "/static/images/tab-question-active.svg"
-      },
-      {
-        "pagePath": "pages/ask/index",
-        "text": "提问",
-        "iconPath": "/static/images/tab-ask.svg",
-        "selectedIconPath": "/static/images/tab-ask-active.svg"
-      },
-      {
-        "pagePath": "pages/message/index",
-        "text": "消息",
-        "iconPath": "/static/images/tab-message.svg",
-        "selectedIconPath": "/static/images/tab-message-active.svg"
-      },
-      {
-        "pagePath": "pages/profile/index",
-        "text": "我的",
-        "iconPath": "/static/images/tab-profile.svg",
-        "selectedIconPath": "/static/images/tab-profile-active.svg"
-      }
-    ]
-  },
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "",
-    "navigationBarBackgroundColor": "#fff7f3",
-    "backgroundColor": "#fff7f3"
+    "navigationBarBackgroundColor": "transparent",
+    "backgroundColor": "transparent"
   }
 }

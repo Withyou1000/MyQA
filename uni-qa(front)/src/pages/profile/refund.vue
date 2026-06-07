@@ -1,5 +1,5 @@
 <template>
-  <view class="refund-page">
+  <view :class="['refund-page', themePageClass]">
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-eyebrow">Refund Request</text>

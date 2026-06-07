@@ -1,15 +1,17 @@
 <template>
-  <view class="login-page">
+  <view :class="['login-page', themePageClass]">
     <view class="decor decor-left" />
     <view class="decor decor-right" />
 
+    <view class="hero-wrap">
     <view class="hero-card">
       <view class="hero-copy">
         <text class="eyebrow">MyQA</text>
         <text class="title">欢迎回来</text>
         <text class="subtitle">把问题和灵感都交给这里，轻松一点，交流也更有温度。</text>
       </view>
-      <image class="logo" src="/static/logo.png" mode="aspectFit" />
+    </view>
+      <image class="logo" src="/static/cat.webp" mode="aspectFit" />
     </view>
 
     <view class="form-card">
@@ -131,6 +133,8 @@ const goToRegister = () => {
   position: relative;
   min-height: 100vh;
   padding: 36rpx 30rpx 60rpx;
+  background: var(--app-page-bg);
+  background-color: var(--app-page-bg-color, #fff9f6);
   overflow: hidden;
 }
 
@@ -145,6 +149,7 @@ const goToRegister = () => {
   height: 280rpx;
   top: 30rpx;
   left: -90rpx;
+  background: rgba(255, 200, 157, 0.26);
   background: color-mix(in srgb, var(--app-peach) 26%, transparent);
 }
 
@@ -153,20 +158,23 @@ const goToRegister = () => {
   height: 220rpx;
   top: 260rpx;
   right: -70rpx;
+  background: rgba(255, 127, 150, 0.18);
   background: color-mix(in srgb, var(--app-accent) 18%, transparent);
 }
 
+.hero-wrap,
 .hero-card,
 .form-card {
   position: relative;
   z-index: 1;
 }
 
+.hero-wrap {
+  position: relative;
+}
+
 .hero-card {
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
-  padding: 34rpx 30rpx;
+  padding: 34rpx 248rpx 34rpx 30rpx;
   border-radius: var(--app-radius-xl);
   background: var(--app-hero-overlay), var(--app-hero-gradient);
   border: 1rpx solid var(--app-card-border);
@@ -204,13 +212,18 @@ const goToRegister = () => {
 }
 
 .logo {
-  width: 144rpx;
-  height: 144rpx;
-  padding: 22rpx;
-  border-radius: 36rpx;
-  background: var(--app-input-bg);
-  border: 1rpx solid var(--app-card-border);
-  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.45);
+  position: absolute;
+  top: 50%;
+  right: 20rpx;
+  transform: translateY(-50%);
+  width: 250rpx;
+  height: 250rpx;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  z-index: 2;
 }
 
 .form-card {

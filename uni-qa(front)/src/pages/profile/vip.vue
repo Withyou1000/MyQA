@@ -1,5 +1,5 @@
 <template>
-  <view class="vip-container">
+  <view :class="['vip-container', themePageClass]">
     <!-- VIP特权介绍 -->
     <view class="vip-benefits">
       <view class="title">会员特权</view>

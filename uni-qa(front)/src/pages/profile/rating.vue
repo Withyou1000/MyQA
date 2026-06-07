@@ -1,5 +1,5 @@
 <template>
-  <view class="rating-page">
+  <view :class="['rating-page', themePageClass]">
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-eyebrow">Share Your Feelings</text>

@@ -1,5 +1,5 @@
 <template>
-  <view class="detail-page">
+  <view :class="['detail-page', themePageClass]">
     <view class="question-card">
       <view class="question-header">
         <view class="author-info">

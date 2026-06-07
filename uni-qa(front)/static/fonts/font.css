@@ -1,0 +1,12 @@
+/* 全局字体定义：APP自动用ttf，H5自动用woff2 */
+@font-face {
+  font-family: 'GracefulFont'; /* 你自己起的字体名 */
+  src: url('./graceful.woff2') format('woff2'),
+       url('./graceful.ttf') format('truetype');
+       
+  /* 下面是兼容加固，uniapp 端识别更稳定 */
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* 防止字体加载闪烁 */
+}
+

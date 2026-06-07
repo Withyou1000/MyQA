@@ -1,3 +1,4 @@
+//加载 .env 文件
 require('dotenv').config();
 
 const db = require('./db/db');

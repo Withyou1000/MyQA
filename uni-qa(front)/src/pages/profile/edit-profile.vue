@@ -1,5 +1,5 @@
 <template>
-  <view class="edit-profile-container">
+  <view :class="['edit-profile-container', themePageClass]">
     <!-- 列表式编辑项 -->
     <view class="edit-list">
       <!-- 昵称 -->

@@ -1,4 +1,5 @@
 <template>
+  <view :class="['chat-page', themePageClass]">
   <uni-popup ref="popup" type="center" :mask-click="true">
     <view class="popup-container">
       <view class="popup-content">
@@ -212,6 +213,7 @@
       </view>
     </view>
   </view>
+  </view>
 </template>
 
 <script setup>
@@ -226,6 +228,7 @@ import { questionApi } from "@/api/question";
 import { customerServiceApi } from "@/api/customer-service";
 
 const defaultAvatar = "/static/default-avatar.webp";
+const serviceAvatar = "/static/client.webp";
 
 const inputMessage = ref("");
 const inputFocus = ref(false);
@@ -252,6 +255,15 @@ const acceptSubmitting = ref(false);
 let socketMessageHandler = null;
 let scrollTimer = null;
 let scrollRetryTimer = null;
+
+const normalizeAvatarUrl = (value, fallback = defaultAvatar) => {
+  if (!value) return fallback;
+  const safeValue = String(value);
+  if (safeValue.startsWith("http://") || safeValue.startsWith("https://")) {
+    return safeValue;
+  }
+  return `${BASE_URL}${safeValue}`;
+};
 
 
 const normalizeMessage = (message = {}) => ({
@@ -423,9 +435,13 @@ const loadCustomerServiceChat = async (userInfo) => {
   const res = await customerServiceApi.getCustomerChat(customerId.value);
   const customerInfo = res.data?.customerInfo || {};
 
-  userAvatar.value = `${BASE_URL}${userInfo.avatar}`;
   isSelfCustomerService.value = userInfo.role === "customer_service";
-  otherAvatar.value = isSelfCustomerService.value ? `${BASE_URL}${customerInfo.avatar}` : "/static/client.webp";
+  userAvatar.value = isSelfCustomerService.value
+    ? normalizeAvatarUrl(userInfo.avatar, serviceAvatar)
+    : normalizeAvatarUrl(userInfo.avatar, defaultAvatar);
+  otherAvatar.value = isSelfCustomerService.value
+    ? normalizeAvatarUrl(customerInfo.avatar, defaultAvatar)
+    : serviceAvatar;
   title.value = customerInfo.name || (userInfo.role === "customer_service" ? "用户咨询" : "人工客服");
   messages.value = (res.data?.messages || []).map(normalizeMessage);
 
@@ -439,7 +455,7 @@ const loadCustomerServiceChat = async (userInfo) => {
 };
 
 const loadQuestionChat = async (userInfo) => {
-  userAvatar.value = `${BASE_URL}${userInfo.avatar}`;
+  userAvatar.value = normalizeAvatarUrl(userInfo.avatar, defaultAvatar);
 
   try {
     const statusRes = await questionApi.getQuestionStatus(questionId.value);
@@ -451,7 +467,7 @@ const loadQuestionChat = async (userInfo) => {
   const res = await chatApi.getQuestionChat(questionId.value);
   title.value = res.data?.title || "聊天";
   isAsker.value = Boolean(res.data?.isAsker);
-  otherAvatar.value = `${BASE_URL}${res.data?.otherAvatar}`;
+  otherAvatar.value = normalizeAvatarUrl(res.data?.otherAvatar, defaultAvatar);
   messages.value = (res.data?.chatMessages || []).map(normalizeMessage);
 
   updateNavigationTitle();

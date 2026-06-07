@@ -1,8 +1,8 @@
 <template>
-  <view class="profile-page">
+  <view :class="['profile-page', themePageClass]">
     <view class="hero-card" @click="goToUserDetail">
       <view class="hero-actions">
-        <view class="hero-pill" @click.stop="goToVip">会员中心</view>
+        <!-- <view class="hero-pill" @click.stop="goToVip">会员中心</view> -->
         <view class="hero-pill settings-pill" @click.stop="goToSettings">设置</view>
       </view>
 
@@ -90,6 +90,8 @@
         </view>
       </view>
     </view>
+
+    <AppTabBar />
   </view>
 </template>
 
@@ -99,6 +101,7 @@ import { computed, onMounted, ref } from "vue";
 import { userApi } from "@/api/user";
 import { BASE_URL } from "@/api/config";
 import { getStoredTheme, syncThemeUi, themeOptions } from "@/utils/theme";
+import AppTabBar from "@/components/AppTabBar.vue";
 
 const userInfo = ref({});
 const currentTheme = ref(getStoredTheme());
@@ -131,8 +134,6 @@ onMounted(() => {
 });
 
 onShow(() => {
-  currentTheme.value = getStoredTheme();
-  syncThemeUi(currentTheme.value);
   fetchLatestUserInfo();
 });
 
@@ -191,6 +192,8 @@ const contactCustomerService = () => {
 .profile-page {
   min-height: 100vh;
   padding: 28rpx 24rpx 190rpx;
+  background: var(--app-page-bg);
+  background-color: var(--app-page-bg-color, #fff9f6);
 }
 
 .hero-card {
@@ -198,7 +201,8 @@ const contactCustomerService = () => {
   padding: 34rpx 28rpx 30rpx;
   border-radius: 34rpx;
   background: var(--app-hero-overlay), var(--app-hero-gradient);
-  color: #fff;
+  border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
   box-shadow: var(--app-shadow-soft);
 }
 
@@ -212,13 +216,17 @@ const contactCustomerService = () => {
 .hero-pill {
   padding: 10rpx 22rpx;
   border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--app-surface-alt);
+  border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
+  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
   font-size: 22rpx;
   font-weight: 600;
 }
 
 .settings-pill {
-  background: rgba(255, 255, 255, 0.28);
+  background: var(--app-surface-alt);
+  background: color-mix(in srgb, var(--app-surface-alt) 92%, #ffffff);
 }
 
 .hero-top {
@@ -231,7 +239,7 @@ const contactCustomerService = () => {
   width: 124rpx;
   height: 124rpx;
   border-radius: 34rpx;
-  border: 4rpx solid rgba(255, 255, 255, 0.3);
+  border: 4rpx solid var(--app-card-border);
 }
 
 .hero-copy {
@@ -248,7 +256,9 @@ const contactCustomerService = () => {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  opacity: 0.84;
+  color: var(--app-hero-text);
+  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
+  opacity: 1;
 }
 
 .intro {
@@ -256,7 +266,9 @@ const contactCustomerService = () => {
   margin-top: 16rpx;
   font-size: 22rpx;
   line-height: 1.7;
-  opacity: 0.9;
+  color: var(--app-hero-text);
+  color: color-mix(in srgb, var(--app-hero-text) 84%, #ffffff);
+  opacity: 1;
 }
 
 .stats-grid {
@@ -269,7 +281,8 @@ const contactCustomerService = () => {
 .stat-card {
   padding: 22rpx 18rpx;
   border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--app-surface-alt);
+  border: 1rpx solid var(--app-card-border);
   text-align: center;
   backdrop-filter: blur(12rpx);
 }
@@ -284,7 +297,9 @@ const contactCustomerService = () => {
   display: block;
   margin-top: 10rpx;
   font-size: 22rpx;
-  opacity: 0.88;
+  color: var(--app-hero-text);
+  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
+  opacity: 1;
 }
 
 .quick-grid {

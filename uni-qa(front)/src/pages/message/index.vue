@@ -1,5 +1,5 @@
 <template>
-  <view class="message-page">
+  <view :class="['message-page', themePageClass]">
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-eyebrow">Message Lounge</text>
@@ -114,6 +114,8 @@
         <text>{{ errorText ? "重新加载" : "刷新列表" }}</text>
       </view>
     </view>
+
+    <AppTabBar />
   </view>
 </template>
 
@@ -122,6 +124,7 @@ import { ref, watch } from "vue";
 import { onPullDownRefresh, onShow, onHide, onUnload } from "@dcloudio/uni-app";
 import { chatApi } from "@/api/chat";
 import { BASE_URL } from "@/api/config";
+import AppTabBar from "@/components/AppTabBar.vue";
 
 const keyword = ref("");
 const activeFilter = ref("all");
@@ -144,11 +147,11 @@ const filters = [
 ];
 
 const avatarGradients = [
-  "linear-gradient(135deg, #ff9dac 0%, #ffc796 100%)",
-  "linear-gradient(135deg, #ffb57f 0%, #ffdba2 100%)",
-  "linear-gradient(135deg, #7ccdb7 0%, #a9ecd5 100%)",
-  "linear-gradient(135deg, #f78ca0 0%, #fbc2a6 100%)",
-  "linear-gradient(135deg, #8cc1ff 0%, #d7dfff 100%)",
+  "linear-gradient(135deg, var(--app-accent) 0%, var(--app-peach) 100%)",
+  "linear-gradient(135deg, var(--app-warning-text) 0%, var(--app-peach) 100%)",
+  "linear-gradient(135deg, var(--app-mint) 0%, var(--app-success-text) 100%)",
+  "linear-gradient(135deg, var(--app-accent-strong) 0%, var(--app-info-text) 100%)",
+  "linear-gradient(135deg, var(--app-ink-soft) 0%, var(--app-accent) 100%)",
 ];
 
 const refreshableSocketTypes = new Set(["message_received", "notify", "apply_accept"]);
@@ -391,7 +394,7 @@ onUnload(() => {
 <style lang="scss" scoped>
 .message-page {
   min-height: 100vh;
-  padding: 28rpx 24rpx 44rpx;
+  padding: 28rpx 24rpx 182rpx;
   background: var(--app-page-bg);
 }
 
@@ -416,6 +419,7 @@ onUnload(() => {
   font-size: 22rpx;
   letter-spacing: 3rpx;
   text-transform: uppercase;
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 76%, #ffffff);
   opacity: 1;
 }
@@ -432,6 +436,7 @@ onUnload(() => {
   margin-top: 14rpx;
   font-size: 24rpx;
   line-height: 1.6;
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 84%, #ffffff);
   opacity: 1;
 }
@@ -457,6 +462,7 @@ onUnload(() => {
 .hero-stat-label {
   margin-top: 8rpx;
   font-size: 22rpx;
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
   opacity: 1;
 }
@@ -514,8 +520,8 @@ onUnload(() => {
 }
 
 .filter-tab.active {
-  background: linear-gradient(135deg, #ff9aab 0%, #ffb98f 100%);
-  color: #fff;
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  color: var(--app-hero-text);
   box-shadow: 0 12rpx 24rpx rgba(255, 137, 158, 0.18);
 }
 
@@ -721,7 +727,7 @@ onUnload(() => {
   height: 108rpx;
   margin: 0 auto 24rpx;
   border-radius: 36rpx;
-  background: linear-gradient(135deg, #ffd0b0 0%, #ffb0be 100%);
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
   color: #fff;
   display: flex;
   align-items: center;

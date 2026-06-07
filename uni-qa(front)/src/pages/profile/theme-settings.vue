@@ -1,5 +1,5 @@
 <template>
-  <view class="theme-settings-page">
+  <view :class="['theme-settings-page', themePageClass]">
     <view class="theme-grid">
       <view
         v-for="item in themeOptions"
@@ -45,6 +45,8 @@ const selectTheme = (theme) => {
 .theme-settings-page {
   min-height: 100vh;
   padding: 24rpx;
+  background: var(--app-page-bg);
+  background-color: var(--app-page-bg-color, #fff9f6);
 }
 
 .theme-grid {
@@ -70,7 +72,12 @@ const selectTheme = (theme) => {
 }
 
 .theme-option-ink {
-  background: linear-gradient(135deg, rgba(244, 247, 245, 0.96), rgba(221, 239, 232, 0.92) 58%, rgba(215, 234, 240, 0.92) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(244, 247, 245, 0.96),
+    rgba(221, 239, 232, 0.92) 58%,
+    rgba(215, 234, 240, 0.92) 100%
+  );
 }
 
 .theme-option.active {
@@ -157,7 +164,7 @@ const selectTheme = (theme) => {
 }
 
 .theme-option-ink .theme-name {
-  font-family: "STKaiti", "KaiTi", "Kaiti SC", serif;
+  font-family: "GracefulFont", "STKaiti", "KaiTi", "Kaiti SC", serif;
   color: #2f3538;
 }
 

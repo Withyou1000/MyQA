@@ -1,5 +1,5 @@
 <template>
-  <view class="user-detail-page">
+  <view :class="['user-detail-page', themePageClass]">
     <view class="hero-card">
       <view class="hero-top">
         <image class="avatar" :src="userAvatar" mode="aspectFill" />
@@ -13,7 +13,7 @@
       <view class="stat-row">
         <view class="stat-card">
           <text class="stat-value">{{ userDetail.userInfo.reputation || 0 }}</text>
-          <text class="stat-label">信誉分</text>
+          <text class="stat-label">信誉值</text>
         </view>
         <view class="stat-card">
           <text class="stat-value">{{ userDetail.userInfo.ratingScore || 0 }}%</text>
@@ -92,11 +92,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { computed, ref } from "vue";
 import { getUserRatings } from "@/api/ratings";
 import { BASE_URL } from "@/api/config";
 
-const userDetail = ref({
+const createInitialUserDetail = () => ({
   userInfo: {
     userName: "",
     account: "",
@@ -108,19 +109,26 @@ const userDetail = ref({
   evaluations: [],
 });
 
+const userDetail = ref(createInitialUserDetail());
 const userId = ref("");
 
 const displayName = computed(
   () => userDetail.value.userInfo.userName || userDetail.value.userInfo.account || "这位用户"
 );
 
-const userAvatar = computed(
-  () => `${userDetail.value.userInfo.avatar}` || "/static/default-avatar.webp"
-);
+const userAvatar = computed(() => userDetail.value.userInfo.avatar || "/static/default-avatar.webp");
+
+const normalizeMediaUrl = (value) => {
+  if (!value) return "";
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  return `${BASE_URL}${value}`;
+};
+
+const normalizeImage = (value) => normalizeMediaUrl(value);
 
 const getRaterInitial = (name) => {
   const safeName = (name || "").trim();
-  return safeName ? safeName.slice(0, 1).toUpperCase() : "评";
+  return safeName ? safeName.slice(0, 1).toUpperCase() : "?";
 };
 
 const formatDate = (value) => {
@@ -132,28 +140,31 @@ const formatDate = (value) => {
   ).padStart(2, "0")}`;
 };
 
-onMounted(() => {
-  const pages = getCurrentPages();
-  const currentPage = pages[pages.length - 1];
-  userId.value = currentPage.options.userId;
-  fetchUserDetail(userId.value);
-});
-
 const fetchUserDetail = async (targetUserId) => {
+  if (!targetUserId) {
+    userDetail.value = createInitialUserDetail();
+    uni.showToast({
+      title: "缺少用户信息",
+      icon: "none",
+    });
+    return;
+  }
+
   try {
     const res = await getUserRatings(targetUserId);
     userDetail.value = {
       total: res.data.total || 0,
       evaluations: (res.data.list || []).map((item) => ({
         ...item,
-        raterAvatar: `${BASE_URL}${item.raterAvatar}`,
+        raterAvatar: normalizeMediaUrl(item.raterAvatar),
       })),
       userInfo: {
         ...(res.data.userInfo || {}),
-        avatar: `${BASE_URL}${res.data.userInfo?.avatar}`,
+        avatar: normalizeMediaUrl(res.data.userInfo?.avatar),
       },
     };
   } catch (error) {
+    userDetail.value = createInitialUserDetail();
     uni.showToast({
       title: error.message || "加载失败",
       icon: "none",
@@ -164,24 +175,29 @@ const fetchUserDetail = async (targetUserId) => {
 const previewImage = (index, images) => {
   uni.previewImage({
     current: index,
-    urls: images.map((item) => `${BASE_URL}${item}`),
+    urls: images.map((item) => normalizeMediaUrl(item)).filter(Boolean),
   });
 };
+
+onLoad((options) => {
+  userId.value = String(options?.userId || "").trim();
+  fetchUserDetail(userId.value);
+});
 </script>
 
 <style lang="scss" scoped>
 .user-detail-page {
   min-height: 100vh;
   padding: 24rpx;
+  background: var(--app-page-bg);
+  background-color: var(--app-page-bg-color, #fff9f6);
 }
 
 .hero-card {
   padding: 34rpx 30rpx;
   border-radius: 32rpx;
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.44), transparent 34%),
-    linear-gradient(135deg, #ffbe92 0%, #ff91a5 100%);
-  color: #fff;
+  background: var(--app-hero-overlay), var(--app-hero-gradient);
+  color: var(--app-hero-text);
   box-shadow: var(--app-shadow-soft);
 }
 
@@ -256,7 +272,8 @@ const previewImage = (index, images) => {
   margin-top: 22rpx;
   padding: 28rpx;
   border-radius: 30rpx;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--app-surface);
+  border: 1rpx solid var(--app-card-border);
   box-shadow: var(--app-shadow-card);
 }
 
@@ -288,7 +305,8 @@ const previewImage = (index, images) => {
 .evaluation-card {
   padding: 24rpx;
   border-radius: 26rpx;
-  background: linear-gradient(180deg, #fffaf8 0%, #fff2ec 100%);
+  background: var(--app-surface-soft);
+  border: 1rpx solid var(--app-card-border);
 }
 
 .evaluation-top {

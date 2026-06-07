@@ -1,11 +1,7 @@
+import { ref } from "vue";
+
 const THEME_STORAGE_KEY = "appTheme";
 const DEFAULT_THEME = "light";
-const TAB_BAR_PAGES = [
-  "pages/index/index",
-  "pages/ask/index",
-  "pages/message/index",
-  "pages/profile/index",
-];
 
 const themePalette = {
   light: {
@@ -37,6 +33,13 @@ const themePalette = {
   },
 };
 
+const sharedLightFont =
+  '"Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+const inkBodyFont =
+  '"Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
+const inkDisplayFont =
+  '"GracefulFont", "STKaiti", "KaiTi", "Kaiti SC", "FangSong", serif';
+
 const themeCssVars = {
   light: {
     "--app-ink": "#433649",
@@ -49,6 +52,7 @@ const themeCssVars = {
     "--app-mint": "#83d0b8",
     "--app-cream": "#fffaf8",
     "--app-cream-strong": "#fffdfb",
+    "--app-radius-xl": "32rpx",
     "--app-surface": "rgba(255, 255, 255, 0.92)",
     "--app-surface-soft": "#fff1ec",
     "--app-line": "rgba(255, 150, 167, 0.2)",
@@ -58,12 +62,13 @@ const themeCssVars = {
     "--app-page-bg":
       "radial-gradient(circle at top left, rgba(255, 198, 156, 0.26), transparent 32%), radial-gradient(circle at top right, rgba(255, 133, 163, 0.18), transparent 26%), linear-gradient(180deg, #fff9f6 0%, #fff3ef 56%, #fffaf8 100%)",
     "--app-hero-gradient": "linear-gradient(135deg, #ffb990 0%, #ff90a6 100%)",
-    "--app-hero-overlay": "radial-gradient(circle at top right, rgba(255, 255, 255, 0.36), transparent 30%)",
+    "--app-hero-overlay":
+      "radial-gradient(circle at top right, rgba(255, 255, 255, 0.36), transparent 30%)",
     "--app-card-border": "rgba(255, 255, 255, 0.7)",
-    "--app-surface-alt": "rgba(255, 255, 255, 0.72)",
+    "--app-surface-alt": "rgba(255, 255, 255, 0.28)",
     "--app-input-bg": "linear-gradient(180deg, #fff8f5 0%, #fff2ed 100%)",
-    "--app-font-body": "\"Avenir Next\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif",
-    "--app-font-display": "\"Avenir Next\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif",
+    "--app-font-body": sharedLightFont,
+    "--app-font-display": sharedLightFont,
     "--app-hero-text": "#ffffff",
     "--app-primary-gradient": "linear-gradient(135deg, #ff8ea1 0%, #ffb48f 100%)",
     "--app-primary-shadow": "0 20rpx 48rpx rgba(255, 122, 146, 0.2)",
@@ -86,38 +91,41 @@ const themeCssVars = {
     "--app-accent": "#ff95ad",
     "--app-accent-strong": "#ffafc1",
     "--app-accent-soft": "rgba(255, 149, 173, 0.16)",
-    "--app-peach": "#ffb494",
-    "--app-mint": "#7ac7b1",
+    "--app-peach": "#c89a80",
+    "--app-mint": "#79b4a5",
     "--app-cream": "#18141f",
     "--app-cream-strong": "#201927",
+    "--app-radius-xl": "32rpx",
     "--app-surface": "rgba(30, 24, 39, 0.92)",
     "--app-surface-soft": "rgba(46, 36, 57, 0.9)",
     "--app-line": "rgba(255, 182, 198, 0.16)",
-    "--app-shadow-soft": "0 18rpx 44rpx rgba(0, 0, 0, 0.34)",
-    "--app-shadow-card": "0 14rpx 36rpx rgba(3, 4, 10, 0.26)",
-    "--app-shadow-strong": "0 20rpx 52rpx rgba(0, 0, 0, 0.38)",
+    "--app-shadow-soft": "0 18rpx 44rpx rgba(10, 8, 15, 0.34)",
+    "--app-shadow-card": "0 14rpx 36rpx rgba(8, 6, 14, 0.28)",
+    "--app-shadow-strong": "0 22rpx 56rpx rgba(31, 19, 38, 0.42)",
     "--app-page-bg":
       "radial-gradient(circle at top left, rgba(255, 132, 169, 0.16), transparent 30%), radial-gradient(circle at top right, rgba(122, 199, 177, 0.14), transparent 24%), linear-gradient(180deg, #16131d 0%, #1c1624 46%, #241c30 100%)",
     "--app-hero-gradient": "linear-gradient(135deg, #2e2438 0%, #4e2f48 100%)",
-    "--app-hero-overlay": "radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 30%)",
+    "--app-hero-overlay":
+      "radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 30%)",
     "--app-card-border": "rgba(255, 255, 255, 0.06)",
     "--app-surface-alt": "rgba(255, 255, 255, 0.06)",
-    "--app-input-bg": "linear-gradient(180deg, rgba(46, 36, 57, 0.95) 0%, rgba(31, 24, 40, 0.98) 100%)",
-    "--app-font-body": "\"Avenir Next\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif",
-    "--app-font-display": "\"Avenir Next\", \"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", sans-serif",
+    "--app-input-bg":
+      "linear-gradient(180deg, rgba(46, 36, 57, 0.95) 0%, rgba(31, 24, 40, 0.98) 100%)",
+    "--app-font-body": sharedLightFont,
+    "--app-font-display": sharedLightFont,
     "--app-hero-text": "#ffffff",
-    "--app-primary-gradient": "linear-gradient(135deg, #ff8ea1 0%, #ffb48f 100%)",
-    "--app-primary-shadow": "0 20rpx 52rpx rgba(0, 0, 0, 0.38)",
+    "--app-primary-gradient": "linear-gradient(135deg, #4a3249 0%, #6c4863 52%, #c8879e 100%)",
+    "--app-primary-shadow": "0 20rpx 52rpx rgba(59, 36, 58, 0.34)",
     "--app-accent-badge-bg": "rgba(255, 149, 173, 0.16)",
     "--app-neutral-chip-bg": "rgba(46, 36, 57, 0.92)",
     "--app-success-bg": "rgba(122, 199, 177, 0.16)",
-    "--app-success-text": "#8cd8c2",
-    "--app-warning-bg": "rgba(255, 180, 143, 0.18)",
-    "--app-warning-text": "#ffc9aa",
-    "--app-info-bg": "rgba(120, 179, 255, 0.18)",
-    "--app-info-text": "#9fc7ff",
-    "--app-danger-bg": "rgba(242, 106, 122, 0.18)",
-    "--app-danger-text": "#ffadb8",
+    "--app-success-text": "#95d0bf",
+    "--app-warning-bg": "rgba(200, 154, 128, 0.18)",
+    "--app-warning-text": "#edc5ac",
+    "--app-info-bg": "rgba(150, 169, 221, 0.18)",
+    "--app-info-text": "#c4d0ff",
+    "--app-danger-bg": "rgba(209, 125, 139, 0.18)",
+    "--app-danger-text": "#f0b3be",
     "--app-mask-bg": "rgba(17, 14, 24, 0.48)",
   },
   ink: {
@@ -127,39 +135,44 @@ const themeCssVars = {
     "--app-accent": "#1A96BE",
     "--app-accent-strong": "#1A96BE",
     "--app-accent-soft": "rgba(26, 150, 190, 0.1)",
-    "--app-peach": "#1A96BE",
-    "--app-mint": "#42A070",
+    "--app-peach": "#c6aa77",
+    "--app-mint": "#4d9071",
     "--app-cream": "#f4f7f4",
     "--app-cream-strong": "#fbfcfb",
+    "--app-radius-xl": "32rpx",
     "--app-surface": "rgba(248, 250, 248, 0.72)",
     "--app-surface-soft": "rgba(232, 239, 235, 0.72)",
     "--app-line": "rgba(134, 145, 149, 0.16)",
-    "--app-shadow-soft": "0 18rpx 40rpx rgba(95, 122, 128, 0.08)",
-    "--app-shadow-card": "0 12rpx 28rpx rgba(86, 110, 115, 0.08)",
-    "--app-shadow-strong": "0 18rpx 40rpx rgba(217, 43, 43, 0.12)",
+    "--app-shadow-soft": "0 18rpx 40rpx rgba(88, 108, 111, 0.1)",
+    "--app-shadow-card": "0 12rpx 28rpx rgba(88, 108, 111, 0.1)",
+    "--app-shadow-strong": "0 18rpx 40rpx rgba(35, 118, 137, 0.18)",
     "--app-page-bg":
       "radial-gradient(circle at 18% 24%, rgba(26, 150, 190, 0.1), transparent 24%), radial-gradient(circle at 82% 72%, rgba(66, 160, 112, 0.1), transparent 28%), linear-gradient(180deg, #f2f4f2 0%, #ebf2ef 38%, #dceee8 100%)",
-    "--app-hero-gradient": "linear-gradient(135deg, rgba(235, 243, 240, 0.97) 0%, rgba(215, 233, 226, 0.95) 56%, rgba(205, 226, 233, 0.96) 100%)",
-    "--app-hero-overlay": "radial-gradient(circle at top right, rgba(26, 150, 190, 0.12), transparent 28%), radial-gradient(circle at bottom left, rgba(66, 160, 112, 0.11), transparent 30%)",
+    "--app-hero-gradient":
+      "linear-gradient(135deg, rgba(235, 243, 240, 0.97) 0%, rgba(215, 233, 226, 0.95) 56%, rgba(205, 226, 233, 0.96) 100%)",
+    "--app-hero-overlay":
+      "radial-gradient(circle at top right, rgba(26, 150, 190, 0.12), transparent 28%), radial-gradient(circle at bottom left, rgba(66, 160, 112, 0.11), transparent 30%)",
     "--app-card-border": "rgba(134, 145, 149, 0.24)",
     "--app-surface-alt": "rgba(247, 250, 248, 0.78)",
-    "--app-input-bg": "linear-gradient(180deg, rgba(246, 249, 247, 0.94) 0%, rgba(231, 239, 235, 0.9) 100%)",
-    "--app-font-body": "\"Source Han Sans SC\", \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
-    "--app-font-display": "\"STKaiti\", \"KaiTi\", \"Kaiti SC\", \"FangSong\", serif",
+    "--app-input-bg":
+      "linear-gradient(180deg, rgba(246, 249, 247, 0.94) 0%, rgba(231, 239, 235, 0.9) 100%)",
+    "--app-font-body": inkBodyFont,
+    "--app-font-display": inkDisplayFont,
     "--app-hero-text": "#2f3538",
-    "--app-primary-gradient": "linear-gradient(135deg, rgba(217, 43, 43, 0.92) 0%, rgba(186, 42, 42, 0.98) 100%)",
-    "--app-primary-shadow": "0 18rpx 36rpx rgba(217, 43, 43, 0.12)",
-    "--app-accent-badge-bg": "rgba(26, 150, 190, 0.1)",
+    "--app-primary-gradient":
+      "linear-gradient(135deg, rgba(22, 113, 145, 0.96) 0%, rgba(26, 150, 190, 0.92) 42%, rgba(66, 160, 112, 0.98) 100%)",
+    "--app-primary-shadow": "0 18rpx 36rpx rgba(43, 126, 124, 0.16)",
+    "--app-accent-badge-bg": "rgba(26, 150, 190, 0.12)",
     "--app-neutral-chip-bg": "rgba(134, 145, 149, 0.12)",
     "--app-success-bg": "rgba(66, 160, 112, 0.12)",
-    "--app-success-text": "#2f7b59",
-    "--app-warning-bg": "rgba(26, 150, 190, 0.12)",
-    "--app-warning-text": "#1A96BE",
+    "--app-success-text": "#2f7659",
+    "--app-warning-bg": "rgba(184, 148, 86, 0.14)",
+    "--app-warning-text": "#8a6b34",
     "--app-info-bg": "rgba(26, 150, 190, 0.12)",
-    "--app-info-text": "#1A96BE",
-    "--app-danger-bg": "rgba(217, 43, 43, 0.1)",
-    "--app-danger-text": "#b43a3a",
-    "--app-mask-bg": "rgba(47, 53, 56, 0.2)",
+    "--app-info-text": "#16779a",
+    "--app-danger-bg": "rgba(159, 84, 72, 0.12)",
+    "--app-danger-text": "#9f5448",
+    "--app-mask-bg": "rgba(47, 53, 56, 0.24)",
   },
 };
 
@@ -170,14 +183,14 @@ export const themeOptions = [
     description: "柔和明亮，适合日常浏览",
   },
   {
-    value: "dark",
-    label: "夜幕深色",
-    description: "更沉稳，也更适合夜间使用",
-  },
-  {
     value: "ink",
     label: "青绿水墨",
-    description: "钴蓝与葱绿交织，轻宣纸质感与留白更克制",
+    description: "釉蓝与葱绿交织，轻宣纸质感与留白更克制",
+  },
+  {
+    value: "dark",
+    label: "夜幕深色",
+    description: "更沉静，也更适合夜间使用",
   },
 ];
 
@@ -186,7 +199,18 @@ export const normalizeTheme = (theme) => {
   return DEFAULT_THEME;
 };
 
-export const getStoredTheme = () => normalizeTheme(uni.getStorageSync(THEME_STORAGE_KEY));
+const getInitialTheme = () => {
+  if (typeof uni === "undefined") return DEFAULT_THEME;
+  return normalizeTheme(uni.getStorageSync(THEME_STORAGE_KEY));
+};
+
+export const themeState = ref(getInitialTheme());
+
+export const getThemeHostClass = (theme = themeState.value) =>
+  `theme-${normalizeTheme(theme)}`;
+
+export const getStoredTheme = () =>
+  normalizeTheme(uni.getStorageSync(THEME_STORAGE_KEY));
 
 export const getThemePalette = (theme) => themePalette[normalizeTheme(theme)];
 
@@ -207,32 +231,12 @@ const syncThemeDocument = (theme) => {
   }
 };
 
-const isTabBarPage = () => {
-  const pages = typeof getCurrentPages === "function" ? getCurrentPages() : [];
-  const currentPage = pages[pages.length - 1];
-  const route = currentPage?.route || "";
-
-  return TAB_BAR_PAGES.includes(route);
-};
-
 export const syncThemeUi = (theme) => {
   const nextTheme = normalizeTheme(theme);
   const palette = getThemePalette(nextTheme);
 
+  themeState.value = nextTheme;
   syncThemeDocument(nextTheme);
-
-  if (typeof uni.setTabBarStyle === "function" && isTabBarPage()) {
-    const tabBarTask = uni.setTabBarStyle({
-      color: palette.tabBarText,
-      selectedColor: palette.tabBarSelected,
-      backgroundColor: palette.tabBarBackground,
-      borderStyle: nextTheme === "dark" ? "black" : "white",
-    });
-
-    if (tabBarTask && typeof tabBarTask.catch === "function") {
-      tabBarTask.catch(() => {});
-    }
-  }
 
   if (typeof uni.setBackgroundColor === "function") {
     uni.setBackgroundColor({
@@ -247,8 +251,8 @@ export const syncThemeUi = (theme) => {
       frontColor: palette.navigationText,
       backgroundColor: palette.navigationBackground,
       animation: {
-        duration: 200,
-        timingFunc: "easeIn",
+        duration: 0,
+        timingFunc: "linear",
       },
     });
   }
@@ -268,4 +272,9 @@ export const applyTheme = (theme, options = {}) => {
   uni.$emit("themeChange", nextTheme);
 
   return nextTheme;
+};
+
+export const initTheme = () => {
+  const storedTheme = getStoredTheme();
+  applyTheme(storedTheme, { persist: false });
 };

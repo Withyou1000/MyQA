@@ -1,5 +1,5 @@
 <template>
-  <view class="ask-page">
+  <view :class="['ask-page', themePageClass]">
     <view class="hero-card">
       <text class="hero-tag">发起问题</text>
       <text class="hero-title">认真描述一点，回答就会更贴近你</text>
@@ -130,6 +130,8 @@
         </view>
       </view>
     </view>
+
+    <AppTabBar />
   </view>
 </template>
 
@@ -137,6 +139,7 @@
 import { ref } from "vue";
 import { commonApi } from "@/api/common";
 import { questionApi } from "@/api/question";
+import AppTabBar from "@/components/AppTabBar.vue";
 
 const questionDesc = ref("");
 const reward = ref("");
@@ -322,13 +325,13 @@ const handleSubmit = async () => {
 <style lang="scss" scoped>
 .ask-page {
   min-height: 100vh;
-  padding: 28rpx 24rpx 170rpx;
+  padding: 28rpx 24rpx 220rpx;
   background: var(--app-page-bg);
 }
 
 .hero-card {
   padding: 34rpx 30rpx;
-  border-radius: var(--app-radius-xl);
+  border-radius: 32rpx;
   background: var(--app-hero-overlay), var(--app-hero-gradient);
   border: 1rpx solid var(--app-card-border);
   color: var(--app-hero-text);
@@ -341,6 +344,7 @@ const handleSubmit = async () => {
   border-radius: 999rpx;
   background: var(--app-surface-alt);
   border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
   font-size: 20rpx;
   letter-spacing: 2rpx;
@@ -359,6 +363,7 @@ const handleSubmit = async () => {
   margin-top: 16rpx;
   font-size: 24rpx;
   line-height: 1.75;
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 84%, #ffffff);
   opacity: 1;
 }
@@ -553,7 +558,7 @@ const handleSubmit = async () => {
   position: fixed;
   left: 24rpx;
   right: 24rpx;
-  bottom: 104rpx;
+  bottom: 152rpx;
   z-index: 80;
 }
 

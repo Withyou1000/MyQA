@@ -1,5 +1,5 @@
 <template>
-  <view class="rating-detail-page">
+  <view :class="['rating-detail-page', themePageClass]">
     <view v-if="loading" class="state-card">
       <text class="state-title">正在加载评价详情</text>
       <text class="state-desc">稍等一下，正在同步这条评价内容。</text>
@@ -274,6 +274,7 @@ onLoad((options) => {
 
 .star {
   font-size: 52rpx;
+  color: rgba(199, 126, 19, 0.28);
   color: color-mix(in srgb, var(--app-warning-text) 28%, transparent);
 }
 

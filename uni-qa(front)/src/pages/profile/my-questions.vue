@@ -1,5 +1,5 @@
 <template>
-  <view class="my-questions-page">
+  <view :class="['my-questions-page', themePageClass]">
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-eyebrow">My Questions</text>
@@ -371,6 +371,7 @@ const goToQuestionDetail = (question) => {
   border-radius: 999rpx;
   background: var(--app-surface-alt);
   border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
   font-size: 20rpx;
   letter-spacing: 2rpx;
@@ -388,6 +389,7 @@ const goToQuestionDetail = (question) => {
   margin-top: 14rpx;
   font-size: 24rpx;
   line-height: 1.7;
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 84%, #ffffff);
   opacity: 1;
 }
@@ -414,6 +416,7 @@ const goToQuestionDetail = (question) => {
 .hero-stat-label {
   margin-top: 12rpx;
   font-size: 22rpx;
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
 }
 

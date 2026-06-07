@@ -1,5 +1,5 @@
 <template>
-  <view class="application-page">
+  <view :class="['application-page', themePageClass]">
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-eyebrow">Applicants</text>
@@ -224,6 +224,7 @@ onShow(() => {
   border-radius: 999rpx;
   background: var(--app-surface-alt);
   border: 1rpx solid var(--app-card-border);
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
   font-size: 20rpx;
   letter-spacing: 2rpx;
@@ -241,6 +242,7 @@ onShow(() => {
   margin-top: 14rpx;
   font-size: 24rpx;
   line-height: 1.7;
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 84%, #ffffff);
   opacity: 1;
 }
@@ -267,6 +269,7 @@ onShow(() => {
 .hero-stat-label {
   margin-top: 12rpx;
   font-size: 22rpx;
+  color: var(--app-hero-text);
   color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
 }
 

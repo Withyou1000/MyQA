@@ -1,5 +1,5 @@
 <template>
-  <view class="home-page">
+  <view :class="['home-page', themePageClass]">
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-tag">今日灵感站</text>
@@ -16,26 +16,16 @@
 
     <view class="search-card">
       <view class="search-input-wrap">
-        <input
-          type="text"
-          placeholder="搜一搜你关心的问题"
-          class="search-input"
-          v-model="searchKeyword"
-          @confirm="handleSearch"
-        />
+        <input type="text" placeholder="搜一搜你关心的问题" class="search-input" v-model="searchKeyword"
+          @confirm="handleSearch" />
         <text class="search-icon" @click="handleSearch">搜索</text>
       </view>
       <GlobalNotification />
     </view>
 
     <scroll-view class="category-list" scroll-x show-scrollbar="false">
-      <view
-        v-for="(category, index) in categories"
-        :key="index"
-        class="category-item"
-        :class="{ active: category === selectedCategory }"
-        @click="handleCategoryClick(category)"
-      >
+      <view v-for="(category, index) in categories" :key="index" class="category-item"
+        :class="{ active: category === selectedCategory }" @click="handleCategoryClick(category)">
         <text class="category-text">{{ category }}</text>
       </view>
     </scroll-view>
@@ -50,13 +40,8 @@
         <uni-load-more status="loading" />
       </view>
 
-      <view
-        v-else-if="questions.length > 0"
-        v-for="question in questions"
-        :key="question.questionId"
-        class="question-item"
-        @click="goToQuestionDetail(question)"
-      >
+      <view v-else-if="questions.length > 0" v-for="question in questions" :key="question.questionId"
+        class="question-item" @click="goToQuestionDetail(question)">
         <view class="question-top">
           <view class="author-pill">
             <view class="author-avatar">{{ getAuthorInitial(question) }}</view>
@@ -85,6 +70,8 @@
         <text class="empty-desc">换个关键词试试，或者切换别的主题看看。</text>
       </view>
     </view>
+
+    <AppTabBar />
   </view>
 </template>
 
@@ -92,6 +79,7 @@
 import { ref, onMounted } from "vue";
 import { questionApi, applyApi } from "@/api";
 import { onShow, onPullDownRefresh } from "@dcloudio/uni-app";
+import AppTabBar from "@/components/AppTabBar.vue";
 
 const categories = ref(["编程", "教育", "硬件", "游戏", "动画", "其他"]);
 
@@ -253,7 +241,7 @@ onPullDownRefresh(async () => {
 <style lang="scss" scoped>
 .home-page {
   min-height: 100vh;
-  padding: 28rpx 24rpx 42rpx;
+  padding: 28rpx 24rpx 182rpx;
   background: var(--app-page-bg);
 }
 
@@ -261,7 +249,7 @@ onPullDownRefresh(async () => {
   display: flex;
   gap: 20rpx;
   padding: 34rpx 28rpx;
-  border-radius: var(--app-radius-xl);
+  border-radius: 32rpx;
   background: var(--app-hero-overlay), var(--app-hero-gradient);
   border: 1rpx solid var(--app-card-border);
   color: var(--app-hero-text);
@@ -350,8 +338,8 @@ onPullDownRefresh(async () => {
   min-width: 94rpx;
   height: 58rpx;
   border-radius: 999rpx;
-  background: rgba(255, 127, 150, 0.14);
-  color: var(--app-accent-strong);
+  background: var(--app-primary-gradient);
+  color: #fff;
   font-size: 24rpx;
   display: flex;
   align-items: center;
@@ -381,7 +369,7 @@ onPullDownRefresh(async () => {
   border-radius: 999rpx;
   background: var(--app-surface-alt);
   color: var(--app-ink-soft);
-  box-shadow: 0 10rpx 24rpx rgba(218, 178, 165, 0.12);
+  box-shadow: var(--app-shadow-card);
 }
 
 .category-item.active {
@@ -443,7 +431,7 @@ onPullDownRefresh(async () => {
   width: 56rpx;
   height: 56rpx;
   border-radius: 18rpx;
-  background: linear-gradient(135deg, #ffd5b4 0%, #ff91a7 100%);
+  background: var(--app-primary-gradient);
   color: #fff;
   font-size: 24rpx;
   font-weight: 700;

@@ -1,5 +1,15 @@
 import { request } from './config'
 
+const buildQueryString = (params = {}) => {
+  if (typeof params === 'string') {
+    return encodeURIComponent(params);
+  }
+  return Object.entries(params)
+    .filter(([, value]) => value !== '' && value !== undefined && value !== null)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&');
+}
+
 /**
  * 问题相关API服务
  */
@@ -25,9 +35,9 @@ export const questionApi = {
    * }>} 返回搜索结果列表
    */
   search(keyword) {
-    const queryString = new URLSearchParams(keyword).toString();
+    const queryString = buildQueryString(keyword);
     return request({
-      url: `/question/search?${queryString}`,
+      url: `/question/search?keyword=${queryString}`,
       method: 'GET',
     })
   },
@@ -76,9 +86,9 @@ export const questionApi = {
    * }>} 返回问题列表
    */
   getQuestionList(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
+    const queryString = buildQueryString(params);
     return request({
-      url: `/question/?${queryString}`,
+      url: queryString ? `/question/?${queryString}` : '/question/',
       method: 'GET'
     })
   },

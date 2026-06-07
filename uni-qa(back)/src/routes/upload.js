@@ -43,17 +43,16 @@ if (!fs.existsSync(refundDir)) {
   fs.mkdirSync(refundDir, { recursive: true });
 }
 
-//默认先全都先存在images目录，然后通过压缩后存储在不同位置
-// 配置multer存储
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// 直接把上传内容放进内存，再交给 sharp 输出到最终目录。
+// 这样可以避免“先落临时文件，再删除临时文件”的额外步骤，也就不会再遇到 Windows 的 unlink 句柄占用问题。
+const storage = multer.memoryStorage();
+
+// 统一生成最终文件名。
+// 这里保留原来的“字段名 + 时间戳 + 随机数”格式，避免影响现有文件命名习惯。
+const createUploadFilename = (file) => {
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  return `${file.fieldname}-${uniqueSuffix}.webp`;
+};
 
 // 文件过滤
 const fileFilter = (req, file, cb) => {
@@ -113,7 +112,7 @@ router.post('/image', authMiddleware, uploadLimiter, async (req, res) => {
       }
       // 只处理第一个文件
       const file = req.files[0];
-      const webpFilename = path.parse(file.filename).name + '.webp';
+      const webpFilename = createUploadFilename(file);
 
       // 根据字段名确定存储目录
       let targetDir = uploadDir;
@@ -147,8 +146,17 @@ router.post('/image', authMiddleware, uploadLimiter, async (req, res) => {
 
       const webpPath = path.join(targetDir, webpFilename);
 
-      // 压缩并转换为webp
-      let sharpInstance = sharp(file.path).webp({ quality: 80 });
+      // multer 使用 memoryStorage 时，原始文件内容会放在 file.buffer 里。
+      // sharp 直接处理内存中的二进制数据，可以少一次磁盘 I/O，也避免临时文件清理问题。
+      if (!file.buffer) {
+        return res.status(400).json({
+          code: 400,
+          message: '上传文件读取失败'
+        });
+      }
+
+      // 压缩并转换为 webp
+      let sharpInstance = sharp(file.buffer).webp({ quality: 80 });
 
       // 如果是头像，添加尺寸调整
       if (file.fieldname === 'avatar') {
@@ -160,9 +168,6 @@ router.post('/image', authMiddleware, uploadLimiter, async (req, res) => {
       }
 
       await sharpInstance.toFile(webpPath);
-
-      // 删除临时原始文件
-      fs.unlinkSync(file.path);
 
       // 生成访问URL
       const url = `${urlPath}/${webpFilename}`;

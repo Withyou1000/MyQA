@@ -1,5 +1,5 @@
 <template>
-  <view class="refund-detail-page">
+  <view :class="['refund-detail-page', themePageClass]">
     <view v-if="loading" class="state-card loading-card">
       <text class="state-title">正在加载退款详情</text>
       <text class="state-desc">稍等一下，正在同步这笔退款申请的信息。</text>

@@ -1,5 +1,5 @@
 <template>
-  <view class="settings-page">
+  <view :class="['settings-page', themePageClass]">
     <view class="settings-list">
       <view class="settings-item" @click="goToEditProfile">
         <view class="item-left">
@@ -32,7 +32,7 @@
 import { onShow } from "@dcloudio/uni-app";
 import { computed, ref } from "vue";
 import { authApi } from "@/api/auth";
-import { getStoredTheme, syncThemeUi, themeOptions } from "@/utils/theme";
+import { getStoredTheme, themeOptions } from "@/utils/theme";
 
 const currentTheme = ref(getStoredTheme());
 
@@ -41,10 +41,6 @@ const currentThemeLabel = computed(() => {
   return matched ? matched.label : "暖杏浅色";
 });
 
-onShow(() => {
-  currentTheme.value = getStoredTheme();
-  syncThemeUi(currentTheme.value);
-});
 
 const goToEditProfile = () => {
   uni.navigateTo({
@@ -86,6 +82,8 @@ const handleLogout = () => {
 .settings-page {
   min-height: 100vh;
   padding: 24rpx;
+  background: var(--app-page-bg);
+  background-color: var(--app-page-bg-color, #fff9f6);
 }
 
 .settings-list {
@@ -131,6 +129,6 @@ const handleLogout = () => {
 }
 
 .logout-item .item-title {
-  color: #e46d7f;
+  color: var(--app-danger-text);
 }
 </style>

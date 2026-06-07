@@ -1,5 +1,5 @@
 <template>
-  <view class="register-page">
+  <view :class="['register-page', themePageClass]">
     <view class="hero-card">
       <text class="eyebrow">Create Account</text>
       <text class="hero-title">把你的问答小屋搭起来</text>
@@ -264,6 +264,7 @@ const goToLogin = () => {
   &.input-focus {
     border-color: var(--app-accent);
     background: var(--app-cream-strong);
+    box-shadow: 0 0 0 6rpx rgba(255, 127, 150, 0.1);
     box-shadow: 0 0 0 6rpx color-mix(in srgb, var(--app-accent) 10%, transparent);
   }
 
