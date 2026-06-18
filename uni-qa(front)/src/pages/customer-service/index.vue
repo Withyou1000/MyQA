@@ -187,7 +187,7 @@ const loadRequests = async () => {
 
 const enterChat = (session) => {
   uni.navigateTo({
-    url: `/pages/chat/index?type=customer_service&customerId=${session.customerId}&sessionId=${session.id}`,
+    url: `/pages/customer-service/chat?customerId=${session.customerId}&sessionId=${session.id}`,
   })
 }
 
@@ -196,7 +196,7 @@ const acceptRequest = async (request) => {
     const res = await customerServiceApi.acceptRequest(request.id)
     if (res.code === 200) {
       uni.navigateTo({
-        url: `/pages/chat/index?type=customer_service&customerId=${res.data.customerId}&sessionId=${res.data.sessionId}`,
+        url: `/pages/customer-service/chat?customerId=${res.data.customerId}&sessionId=${res.data.sessionId}`,
       })
       loadRequests()
     }

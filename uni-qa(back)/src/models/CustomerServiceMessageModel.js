@@ -33,10 +33,15 @@ const CustomerServiceMessageSchema = new mongoose.Schema({
     enum: ['text', 'image', 'transaction'],
     required: true
   },
+  senderType: {
+    type: String,
+    enum: ['user', 'ai', 'human_service', 'system'],
+    default: 'user'
+  },
   senderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    default: null
   },
   receiverId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +51,10 @@ const CustomerServiceMessageSchema = new mongoose.Schema({
   isRead: {
     type: Boolean,
     default: false
+  },
+  extra: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   },
   createdAt: {
     type: Date,

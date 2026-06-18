@@ -121,6 +121,44 @@ export const customerServiceApi = {
   },
 
   /**
+   * 确认转人工客服
+   * @param {Object} payload
+   * @param {string} payload.customerId - 当前客户ID
+   * @param {string} [payload.message] - 转人工说明
+   */
+  confirmAiHandoff(payload) {
+    return request({
+      url: '/customer-service/ai/handoff-confirm',
+      method: 'POST',
+      data: payload
+    })
+  },
+
+  /**
+   * 撤销转人工请求
+   * @param {Object} payload
+   * @param {string} payload.customerId - 当前客户ID
+   */
+  cancelAiHandoff(payload) {
+    return request({
+      url: '/customer-service/ai/handoff-cancel',
+      method: 'POST',
+      data: payload
+    })
+  },
+
+  /**
+   * 获取客服会话模式
+   * @param {string} customerId - 客户ID
+   */
+  getSessionMode(customerId) {
+    return request({
+      url: `/customer-service/session/${customerId}/mode`,
+      method: 'GET'
+    })
+  },
+
+  /**
    * 获取待处理的客服请求列表
    * @returns {Promise<Array<{
    *   id: string,

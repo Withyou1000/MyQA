@@ -176,6 +176,14 @@
       }
     },
     {
+      "path": "pages/customer-service/chat",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationBarBackgroundColor": "transparent",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
       "path": "pages/customer-service/transaction-detail",
       "style": {
         "navigationBarTitleText": "交易详情",

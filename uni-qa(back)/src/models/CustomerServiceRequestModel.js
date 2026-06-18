@@ -8,7 +8,8 @@ const CustomerServiceRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'accepted'],
+    // cancelled 用于用户在人工客服接入前撤销排队请求，保留记录但不再进入待处理列表。
+    enum: ['pending', 'accepted', 'cancelled'],
     default: 'pending'
   },
   serviceId: {

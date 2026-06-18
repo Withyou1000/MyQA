@@ -183,7 +183,7 @@ const contactCustomerService = () => {
   if (!userInfo.value.userId) return;
 
   uni.navigateTo({
-    url: `/pages/chat/index?type=customer_service&customerId=${userInfo.value.userId}`,
+    url: `/pages/customer-service/chat?customerId=${userInfo.value.userId}`,
   });
 };
 </script>
