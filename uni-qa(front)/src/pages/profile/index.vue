@@ -81,6 +81,14 @@
           <text class="arrow">></text>
         </view>
 
+        <view class="menu-item" @click="goToAgent">
+          <view class="item-left">
+            <view class="icon-box agent-box">AI</view>
+            <text class="text">智能 Agent 助手</text>
+          </view>
+          <text class="arrow">></text>
+        </view>
+
         <view class="menu-item" @click="goToSettings">
           <view class="item-left">
             <view class="icon-box settings-box">设</view>
@@ -176,6 +184,13 @@ const goToUserDetail = () => {
 const goToSettings = () => {
   uni.navigateTo({
     url: "/pages/profile/settings",
+  });
+};
+
+const goToAgent = () => {
+  // Agent 助手是独立功能页，不和原客服聊天耦合，方便展示多步规划和工具调用能力。
+  uni.navigateTo({
+    url: "/pages/agent/index",
   });
 };
 
@@ -337,6 +352,11 @@ const contactCustomerService = () => {
 .settings-box {
   background: var(--app-success-bg);
   color: var(--app-success-text);
+}
+
+.agent-box {
+  background: rgba(15, 118, 110, 0.12);
+  color: #0f766e;
 }
 
 .quick-title {

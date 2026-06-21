@@ -29,6 +29,7 @@ db(() => {
   const chatRouter = require('./routes/chat');
   const refundRouter = require('./routes/refund');
   const customerServiceRouter = require('./routes/customerService');
+  const agentRouter = require('./routes/agent');
 
   // 初始化 Express 应用
   const app = express();
@@ -55,6 +56,7 @@ db(() => {
   app.use('/chat', chatRouter);
   app.use('/refund', refundRouter);
   app.use('/customer-service', customerServiceRouter);
+  app.use('/agent', agentRouter);
 
   // 错误处理中间件
   app.use((err, req, res, next) => {

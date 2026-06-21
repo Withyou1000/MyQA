@@ -65,6 +65,22 @@
       }
     },
     {
+      "path": "pages/agent/index",
+      "style": {
+        "navigationBarTitleText": "智能 Agent 助手",
+        "navigationBarBackgroundColor": "transparent",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/agent/history",
+      "style": {
+        "navigationBarTitleText": "Agent 历史记录",
+        "navigationBarBackgroundColor": "transparent",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
       "path": "pages/profile/index",
       "style": {
         "navigationBarTitleText": "个人中心",

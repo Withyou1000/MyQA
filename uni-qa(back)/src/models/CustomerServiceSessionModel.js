@@ -30,7 +30,7 @@ const CustomerServiceSessionSchema = new mongoose.Schema({
   },
   serviceMode: {
     type: String,
-    enum: ['ai', 'human', 'hybrid'],
+    enum: ['ai', 'human', 'hybrid', 'agent'],
     default: 'ai'
   },
   aiStatus: {
