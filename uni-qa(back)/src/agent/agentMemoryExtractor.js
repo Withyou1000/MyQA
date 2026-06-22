@@ -55,6 +55,14 @@ function buildFallbackMemoryPatch(goal) {
   return {
     shouldRemember,
     operation: detectOperation(text),
+    type: avoidTopics.length ? 'constraint' : 'preference',
+    content: shouldRemember ? text : '',
+    confidence: shouldRemember ? 0.72 : 0.3,
+    validFrom: new Date(),
+    validTo: null,
+    ttlDays: 0,
+    importance: shouldRemember ? 0.7 : 0.2,
+    action: shouldRemember ? detectOperation(text) : 'ignore',
     topics: uniqueList(positiveTopics),
     keywords: uniqueList(positiveTopics),
     avoidTopics: uniqueList(avoidTopics),
@@ -76,10 +84,22 @@ function normalizeMemoryPatch(rawPatch, goal, source = 'model') {
   const fallback = buildFallbackMemoryPatch(goal);
   const patch = rawPatch && typeof rawPatch === 'object' ? rawPatch : {};
   const normalizedSource = source === 'model' ? 'model' : 'fallback';
+  const confidence = Number(patch.confidence ?? fallback.confidence ?? 0);
+  const importance = Number(patch.importance ?? fallback.importance ?? 0);
 
   return {
     shouldRemember: Boolean(patch.shouldRemember ?? fallback.shouldRemember),
     operation: ['add', 'replace', 'remove'].includes(patch.operation) ? patch.operation : fallback.operation,
+    type: ['preference', 'constraint', 'profile', 'context'].includes(patch.type) ? patch.type : fallback.type,
+    content: String(patch.content || fallback.content || '').slice(0, 300),
+    confidence: Number.isFinite(confidence) ? Math.min(Math.max(confidence, 0), 1) : fallback.confidence,
+    validFrom: patch.validFrom || fallback.validFrom,
+    validTo: patch.validTo || fallback.validTo,
+    ttlDays: Math.max(Number(patch.ttlDays || fallback.ttlDays || 0), 0),
+    importance: Number.isFinite(importance) ? Math.min(Math.max(importance, 0), 1) : fallback.importance,
+    action: ['write', 'ignore', 'replace', 'remove', 'add'].includes(patch.action)
+      ? patch.action
+      : fallback.action,
     topics: uniqueList(Array.isArray(patch.topics) ? patch.topics : fallback.topics),
     keywords: uniqueList(Array.isArray(patch.keywords) ? patch.keywords : fallback.keywords),
     avoidTopics: uniqueList(Array.isArray(patch.avoidTopics) ? patch.avoidTopics : fallback.avoidTopics),

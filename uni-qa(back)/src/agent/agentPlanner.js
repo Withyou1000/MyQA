@@ -33,6 +33,28 @@ function extractSearchInput(goal, memory) {
   };
 }
 
+function extractQuestionPublishInput(goal) {
+  const text = String(goal || '').trim();
+  const rewardMatch = text.match(/(\d+)\s*(元|块|赏金)/);
+  const topicMatch = text.match(/(编程|教育|硬件|游戏|动画|其他|Java|前端|Vue|Node|Python|AI)/i);
+  const rawTopic = topicMatch ? topicMatch[1] : '';
+  const topic = /^(Java|前端|Vue|Node|Python|AI)$/i.test(rawTopic) ? '编程' : rawTopic;
+  const tags = rawTopic && rawTopic !== topic ? [rawTopic] : rawTopic ? [rawTopic] : [];
+  const cleanedTitle = text
+    .replace(/帮我|请|发布|发一个|发个|创建|新建|提一个|问题|赏金\s*\d+\s*(元|块)?|\d+\s*(元|块|赏金)/g, '')
+    .replace(/[，。,.]/g, ' ')
+    .trim();
+
+  return {
+    title: cleanedTitle || text.slice(0, 60),
+    content: text,
+    topic,
+    tags,
+    reward: rewardMatch ? Number(rewardMatch[1]) : 0,
+    images: []
+  };
+}
+
 function extractQuotedQuestionTitle(goal) {
   const text = String(goal || '');
   const quoteMatch = text.match(/[“"']([^“"']+)[”"']/);
@@ -120,6 +142,20 @@ function fallbackPlan(goal, memory) {
     };
   }
 
+  if (detectKeyword(text, ['发布问题', '发布一个问题', '发布一个', '发一个问题', '发个问题', '发起问题', '创建问题', '新建问题', '提一个问题'])) {
+    return {
+      intent: 'publish_question',
+      plan: ['整理用户想发布的问题草稿', '生成需要用户确认的发布动作卡片', '用户确认后发布问题并扣除赏金'],
+      toolSteps: [
+        {
+          toolName: 'create_question',
+          input: extractQuestionPublishInput(text)
+        }
+      ],
+      needsConfirmation: true
+    };
+  }
+
   if (detectKeyword(text, ['退款', '退钱', '退款状态'])) {
     return {
       intent: 'refund_support',
@@ -176,6 +212,7 @@ function describeToolStep(step) {
     get_recent_transactions: '查询最近问答交易',
     get_refund_status: '查询退款记录和处理状态',
     search_knowledge_base: '检索平台知识库',
+    create_question: '整理问题草稿，等待用户确认后发布问题',
     create_handoff_request: '等待用户确认后转人工客服'
   };
   return map[step.toolName] || `调用工具 ${step.toolName}`;
@@ -218,13 +255,15 @@ function normalizeModelPlan(modelPlan, goal, memory) {
 
   // 页面展示计划必须由已通过工具白名单校验的 toolSteps 生成，
   // 避免模型另外生成一份自然语言 plan 后与实际执行工具不一致。
-  const plan = buildExecutablePlan(toolSteps, modelPlan?.needsConfirmation);
+  const containsConfirmOnlyTool = toolSteps.some((step) => step.toolName === 'create_question');
+  const needsConfirmation = Boolean(modelPlan?.needsConfirmation || containsConfirmOnlyTool);
+  const plan = buildExecutablePlan(toolSteps, needsConfirmation);
 
   return {
     intent: String(modelPlan?.intent || fallback.intent),
     plan,
     toolSteps,
-    needsConfirmation: Boolean(modelPlan?.needsConfirmation),
+    needsConfirmation,
     source: 'model',
     sourceLabel: '模型 Planner',
     fallbackReason: ''
@@ -238,6 +277,8 @@ async function createModelPlan(goal, memory) {
     '你要根据用户目标，从工具列表中选择少量必要工具，并输出 JSON。',
     '不要暴露完整思维链，只输出结构化的工具选择结果。',
     '如果用户的问题缺少必要参数，可以先调用能列出候选项的工具。',
+    '发布问题、转人工、退款申请等会改变平台数据或用户状态的动作，必须设置 needsConfirmation=true。',
+    '当用户要求发布问题时，可以选择 create_question，但它只能生成确认动作，不能在未确认时真正执行。',
     '输出字段必须包含 intent、toolSteps、needsConfirmation，不要输出 plan。',
     '页面展示计划由后端根据校验后的 toolSteps 生成，保证计划与实际执行一致。',
     'toolSteps 每项格式：{ "toolName": string, "input": object, "inputFrom": string }。',

@@ -6,6 +6,11 @@ const AgentTraceModel = require('../models/AgentTraceModel');
 const { listTools } = require('../agent/agentToolRegistry');
 const { getOrCreateMemory, serializeMemory } = require('../agent/agentMemoryService');
 const { runAgentTask, confirmAgentAction } = require('../agent/agentExecutor');
+const {
+  listLedgerEvents,
+  getMemoryViews,
+  forgetMemory
+} = require('../agent/agentMemoryLedgerService');
 
 function serializeTrace(trace) {
   return {
@@ -41,6 +46,59 @@ router.get('/memory', authMiddleware, async (req, res) => {
     res.status(500).json({
       code: 500,
       message: '获取 Agent 记忆失败'
+    });
+  }
+});
+
+router.get('/memory/ledger', authMiddleware, async (req, res) => {
+  try {
+    // Ledger 是跨任务的原始账本，用于追溯“什么时候读写了什么记忆”。
+    const events = await listLedgerEvents(req.user.userId, req.query.limit);
+    res.status(200).json({
+      code: 200,
+      data: events
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '获取 Agent 记忆账本失败'
+    });
+  }
+});
+
+router.get('/memory/views', authMiddleware, async (req, res) => {
+  try {
+    // Views 是从 Ledger 和当前记忆派生出的当前快照，给 Planner 和前端直接使用。
+    const views = await getMemoryViews(req.user.userId);
+    res.status(200).json({
+      code: 200,
+      data: views
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '获取 Agent 记忆视图失败'
+    });
+  }
+});
+
+router.post('/memory/forget', authMiddleware, async (req, res) => {
+  try {
+    // 遗忘操作不删除 Ledger 历史，而是追加 memory_forget 事件，保留可追溯性。
+    const event = await forgetMemory({
+      userId: req.user.userId,
+      memoryType: req.body?.memoryType || 'preference',
+      reason: req.body?.reason || '用户主动遗忘记忆'
+    });
+    res.status(200).json({
+      code: 200,
+      message: '已记录遗忘事件',
+      data: event
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: error.message || '遗忘记忆失败'
     });
   }
 });

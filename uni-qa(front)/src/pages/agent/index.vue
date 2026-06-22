@@ -35,11 +35,47 @@
     <view class="memory-panel">
       <view class="panel-title-row">
         <text class="panel-title">记忆系统</text>
-        <button class="ghost-btn" @click="loadMemory">刷新</button>
+        <button class="ghost-btn" @click="loadMemorySystem">刷新</button>
       </view>
       <view class="memory-tags">
         <text v-if="!memoryTags.length" class="muted">还没有沉淀偏好，试试“以后优先推荐前端问题”。</text>
         <text v-for="tag in memoryTags" :key="tag" class="memory-tag">{{ tag }}</text>
+      </view>
+      <view class="memory-tabs">
+        <button
+          v-for="tab in memoryTabs"
+          :key="tab.key"
+          :class="['memory-tab', { active: activeMemoryTab === tab.key }]"
+          @click="activeMemoryTab = tab.key"
+        >
+          {{ tab.label }}
+        </button>
+      </view>
+      <view class="memory-tab-body">
+        <view v-if="activeMemoryTab === 'policy'" class="memory-block">
+          <text class="memory-block-title">Policy 决策</text>
+          <text v-if="!latestPolicyStep" class="muted">运行 Agent 后，这里会显示是否写入、忽略或遗忘记忆。</text>
+          <template v-else>
+            <text class="memory-line">动作：{{ latestPolicyStep.output?.policyDecision?.action || '-' }}</text>
+            <text class="memory-line">原因：{{ latestPolicyStep.summary }}</text>
+            <text class="memory-line">类型：{{ latestPolicyStep.output?.policyDecision?.memoryType || '-' }}</text>
+          </template>
+        </view>
+        <view v-if="activeMemoryTab === 'ledger'" class="memory-block">
+          <text class="memory-block-title">Ledger 原始账本</text>
+          <text v-if="!ledgerEvents.length" class="muted">暂无账本事件。</text>
+          <view v-for="event in ledgerEvents.slice(0, 6)" :key="event._id" class="ledger-row">
+            <text class="memory-line">{{ formatLedgerEvent(event) }}</text>
+            <text class="memory-mini">{{ event.reason }}</text>
+          </view>
+        </view>
+        <view v-if="activeMemoryTab === 'views'" class="memory-block">
+          <text class="memory-block-title">Views 派生视图</text>
+          <text class="memory-line">偏好：{{ formatList(memoryViews?.profileView?.topics) || '暂无' }}</text>
+          <text class="memory-line">关键词：{{ formatList(memoryViews?.profileView?.keywords) || '暂无' }}</text>
+          <text class="memory-line">最低赏金：{{ memoryViews?.profileView?.minReward || 0 }} 元</text>
+          <text class="memory-line">规避主题：{{ formatList(memoryViews?.profileView?.avoidTopics) || '暂无' }}</text>
+        </view>
       </view>
     </view>
 
@@ -104,7 +140,7 @@
           </view>
         </view>
         <button
-          v-if="card.type === 'question_recommendation'"
+          v-if="card.type === 'question_recommendation' || card.type === 'published_question'"
           class="detail-btn"
           @click="openQuestion(card.payload?.questionId)"
         >
@@ -140,6 +176,14 @@ const resultCards = ref([])
 const actionCards = ref([])
 const runStatus = ref('idle')
 const memory = ref(null)
+const memoryViews = ref(null)
+const ledgerEvents = ref([])
+const activeMemoryTab = ref('policy')
+const memoryTabs = [
+  { key: 'policy', label: 'Policy' },
+  { key: 'ledger', label: 'Ledger' },
+  { key: 'views', label: 'Views' }
+]
 
 const memoryTags = computed(() => {
   const preferences = memory.value?.preferences || {}
@@ -162,8 +206,12 @@ const statusLabel = computed(() => {
   return map[runStatus.value] || runStatus.value
 })
 
+const latestPolicyStep = computed(() => {
+  return [...traceSteps.value].reverse().find((step) => step.type === 'memory_policy') || null
+})
+
 onMounted(() => {
-  loadMemory()
+  loadMemorySystem()
 })
 
 const fillExample = (text) => {
@@ -182,6 +230,35 @@ const loadMemory = async () => {
     memory.value = res.data
   } catch (error) {
     uni.showToast({ title: error.message || '记忆加载失败', icon: 'none' })
+  }
+}
+
+// 一次刷新 Memory 2.0 的三类可视化数据，避免用户切 Tab 时看到旧数据。
+const loadMemorySystem = async () => {
+  await Promise.all([
+    loadMemory(),
+    loadMemoryViews(),
+    loadLedgerEvents()
+  ])
+}
+
+// Views 是后端从 Ledger 派生出的当前记忆快照，Planner 后续会优先读取它。
+const loadMemoryViews = async () => {
+  try {
+    const res = await agentApi.getMemoryViews()
+    memoryViews.value = res.data
+  } catch (error) {
+    uni.showToast({ title: error.message || '记忆视图加载失败', icon: 'none' })
+  }
+}
+
+// Ledger 是 append-only 原始账本，前端只展示最近事件帮助理解记忆溯源。
+const loadLedgerEvents = async () => {
+  try {
+    const res = await agentApi.getMemoryLedger({ limit: 30 })
+    ledgerEvents.value = res.data || []
+  } catch (error) {
+    uni.showToast({ title: error.message || '账本加载失败', icon: 'none' })
   }
 }
 
@@ -210,6 +287,7 @@ const startAgentRun = async () => {
     // Agent 任务由后端统一编排，前端只负责展示 trace，避免把业务决策散落在页面里。
     const res = await agentApi.startRun(text)
     applyRunResult(res.data)
+    loadMemorySystem()
   } catch (error) {
     runStatus.value = 'failed'
     uni.showToast({ title: error.message || 'Agent 执行失败', icon: 'none' })
@@ -245,6 +323,15 @@ const compactJson = (value) => {
   }
 }
 
+const formatList = (list = []) => {
+  return Array.isArray(list) ? list.filter(Boolean).join('、') : ''
+}
+
+// Ledger 事件字段比较技术化，这里压缩成“事件类型 · 记忆类型”方便移动端查看。
+const formatLedgerEvent = (event = {}) => {
+  return `${event.eventType || '-'} · ${event.memoryType || '-'}`
+}
+
 const formatStepType = (type) => {
   const map = {
     plan: '计划',
@@ -255,6 +342,9 @@ const formatStepType = (type) => {
     react_action: '再次调用',
     react_observation: '再次观察',
     memory: '记忆',
+    memory_read: '读记忆',
+    memory_policy: '记忆决策',
+    memory_view: '刷新视图',
     chat: '聊天',
     clarification: '追问',
     decision: '决策',
@@ -271,6 +361,7 @@ const formatCardType = (type) => {
     question_applicants: '申请者列表',
     question_selection: '问题候选',
     question_recommendation: '问题推荐',
+    published_question: '已发布问题',
     refund_status: '退款状态',
     transaction_summary: '交易总结'
   }
@@ -423,6 +514,77 @@ const openQuestion = (questionId) => {
   flex-wrap: wrap;
   gap: 12rpx;
   margin-top: 18rpx;
+}
+
+.memory-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10rpx;
+  margin-top: 22rpx;
+}
+
+.memory-tab {
+  margin: 0;
+  height: 54rpx;
+  line-height: 54rpx;
+  border-radius: 14rpx;
+  background: var(--app-surface-soft);
+  color: var(--app-ink-soft);
+  font-size: 21rpx;
+}
+
+.memory-tab.active {
+  background: #0f766e;
+  color: #fff;
+}
+
+.memory-tab-body {
+  margin-top: 18rpx;
+}
+
+.memory-block {
+  padding: 18rpx;
+  border-radius: 18rpx;
+  background: var(--app-input-bg);
+}
+
+.memory-block-title,
+.memory-line,
+.memory-mini {
+  display: block;
+}
+
+.memory-block-title {
+  color: var(--app-ink);
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.memory-line {
+  margin-top: 10rpx;
+  color: var(--app-ink-soft);
+  font-size: 23rpx;
+  line-height: 1.6;
+}
+
+.memory-mini {
+  margin-top: 6rpx;
+  color: var(--app-ink-muted);
+  font-size: 20rpx;
+  line-height: 1.5;
+}
+
+.ledger-row {
+  margin-top: 14rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid var(--app-line);
+}
+
+.ghost-btn.tiny {
+  width: 88rpx;
+  height: 48rpx;
+  line-height: 48rpx;
+  font-size: 20rpx;
 }
 
 .muted,

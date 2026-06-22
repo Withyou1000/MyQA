@@ -10,6 +10,20 @@ const { createPlan } = require('./agentPlanner');
 const { evaluateToolResult } = require('./agentEvaluator');
 const { analyzeAgentInput } = require('./agentInputAnalyzer');
 const { summarizeFinalAnswer } = require('./agentFinalSummarizer');
+const { decideMemoryPolicy } = require('./agentMemoryPolicy');
+const {
+  getMemoryViews,
+  recordMemoryRead,
+  recordMemoryPolicyDecision,
+  recordToolSuccess,
+  refreshMemoryViews
+} = require('./agentMemoryLedgerService');
+
+const CONFIRMATION_ONLY_TOOLS = new Set(['create_question']);
+
+function isConfirmationOnlyTool(toolName) {
+  return CONFIRMATION_ONLY_TOOLS.has(toolName);
+}
 
 /**
  * 把工具返回值压缩成一行 Trace 摘要。
@@ -45,6 +59,28 @@ function buildQuestionCards(rankedResult) {
     },
     confirmAction: ''
   }));
+}
+
+/**
+ * 把已发布的问题转换成结果卡片。
+ * 发布问题是确认后的写操作，卡片用于让用户直接跳转查看新问题。
+ */
+function buildPublishedQuestionCard(questionResult) {
+  if (!questionResult?.questionId) return null;
+
+  return {
+    type: 'published_question',
+    title: questionResult.title || '已发布问题',
+    description: `${questionResult.topic || '未分类'} · ${questionResult.reward || 0} 元 · ${questionResult.status || 'pending'}`,
+    payload: {
+      questionId: questionResult.questionId,
+      topic: questionResult.topic,
+      reward: questionResult.reward,
+      tags: questionResult.tags || [],
+      remainingBalance: questionResult.remainingBalance
+    },
+    confirmAction: ''
+  };
 }
 
 /**
@@ -161,6 +197,15 @@ function buildFinalAnswer(intent, toolResults, memory, adjustments = []) {
   const hasTransactionResult = Boolean(toolResults.get_recent_transactions);
   const hasQuestionStatsResult = Boolean(toolResults.get_user_question_stats);
   const hasApplicantResult = Boolean(toolResults.get_question_applicants);
+  const hasCreatedQuestion = Boolean(toolResults.create_question);
+
+  if (intent === 'publish_question' || hasCreatedQuestion) {
+    const result = toolResults.create_question;
+    if (result?.questionId) {
+      return `问题「${result.title || ''}」已发布成功，赏金 ${result.reward || 0} 元已扣除。`;
+    }
+    return '我已经整理好问题发布草稿。发布会扣除对应赏金，请确认后再执行。';
+  }
 
   if (intent === 'question_applicants' || hasApplicantResult) {
     const result = toolResults.get_question_applicants;
@@ -332,7 +377,21 @@ async function executeToolStep({ trace, userId, memory, step, input, phase = 'to
  * 构造需要用户确认的动作卡片。
  * 转人工这类高影响动作不能自动执行，只能先生成确认卡。
  */
-function buildActionCards(intent, goal, toolResults = {}) {
+function buildActionCards(intent, goal, toolResults = {}, pendingConfirmActions = []) {
+  const publishAction = pendingConfirmActions.find((item) => item.toolName === 'create_question');
+  if (publishAction) {
+    const payload = publishAction.input || {};
+    return [
+      {
+        type: 'publish_question_confirm',
+        title: '确认发布问题',
+        description: `将发布「${payload.title || '未填写标题'}」，分类：${payload.topic || '未填写'}，赏金：${payload.reward || 0} 元。确认后会扣除余额并公开发布。`,
+        payload,
+        confirmAction: 'create_question'
+      }
+    ];
+  }
+
   const shouldHandoffForRefund = Boolean(
     toolResults.get_refund_status && !(toolResults.get_refund_status.list || []).length
   );
@@ -483,13 +542,93 @@ async function createNonTaskTrace({ userId, goal, memory, memoryExtraction, rout
 }
 
 /**
+ * 记录本次任务启动时读取的记忆视图。
+ * 这一步让 Trace 能解释“Planner 之前参考了哪些记忆”，也会写入 Ledger 便于跨任务溯源。
+ */
+async function attachMemoryStartTrace({ trace, userId, memoryViews }) {
+  const readableViews = memoryViews?.toObject?.() || memoryViews || {};
+  await recordMemoryRead({
+    userId,
+    runId: trace._id,
+    views: readableViews
+  });
+
+  trace.steps.push({
+    type: 'memory_read',
+    title: '读取 Memory Views',
+    output: {
+      profileView: memoryViews?.profileView || {},
+      recentContextCount: memoryViews?.recentContextView?.length || 0,
+      toolSuccessCount: memoryViews?.toolSuccessView?.length || 0
+    },
+    summary: 'Agent 在规划前读取了当前偏好、最近上下文和历史工具成功视图。'
+  });
+}
+
+/**
+ * 完成 Memory 2.0 收尾。
+ * 这里统一写 Policy 决策、Ledger 事件并刷新 Views。
+ */
+async function finalizeMemoryCycle({
+  trace,
+  userId,
+  inputAnalysis,
+  policyDecision,
+  plannerResult = null,
+  toolResults = null
+}) {
+  await recordMemoryPolicyDecision({
+    userId,
+    runId: trace._id,
+    memoryPatch: inputAnalysis.memoryPatch,
+    policyDecision
+  });
+
+  trace.steps.push({
+    type: 'memory_policy',
+    title: 'Memory Policy 决策',
+    output: {
+      policyDecision,
+      memoryPatch: inputAnalysis.memoryPatch
+    },
+    summary: policyDecision.reason
+  });
+
+  if (plannerResult && trace.status === 'completed') {
+    await recordToolSuccess({
+      userId,
+      runId: trace._id,
+      plannerResult,
+      toolResults
+    });
+  }
+
+  const refreshedViews = await refreshMemoryViews(userId);
+  trace.steps.push({
+    type: 'memory_view',
+    title: '刷新 Memory Views',
+    output: {
+      profileView: refreshedViews.profileView,
+      timelineCount: refreshedViews.timelineView?.length || 0,
+      toolSuccessCount: refreshedViews.toolSuccessView?.length || 0
+    },
+    summary: 'Ledger 更新后，系统刷新了给 Planner 使用的当前记忆视图。'
+  });
+}
+
+/**
  * Agent 主入口。
  * 这段函数只保留主流程：分析输入、写记忆、路由分流、计划工具、执行工具、总结落库。
  */
 async function runAgentTask({ userId, goal }) {
   const currentMemory = await getOrCreateMemory(userId);
+  const memoryViews = await getMemoryViews(userId);
   const inputAnalysis = await analyzeAgentInput(goal, serializeMemory(currentMemory));
-  const updatedMemory = await updateMemoryWithPatch(userId, inputAnalysis.memoryPatch);
+  const policyDecision = decideMemoryPolicy(inputAnalysis.memoryPatch);
+  const memoryPatchForWrite = policyDecision.shouldWrite
+    ? inputAnalysis.memoryPatch
+    : { ...inputAnalysis.memoryPatch, shouldRemember: false };
+  const updatedMemory = await updateMemoryWithPatch(userId, memoryPatchForWrite);
   const memory = serializeMemory(updatedMemory);
   const memoryExtraction = memory.lastExtractionMeta || {
     source: inputAnalysis.memoryPatch?.source || 'fallback',
@@ -501,13 +640,18 @@ async function runAgentTask({ userId, goal }) {
   const route = inputAnalysis.route;
 
   if (route.mode !== 'task') {
-    return createNonTaskTrace({
+    const trace = await createNonTaskTrace({
       userId,
       goal,
       memory,
       memoryExtraction,
       route
     });
+    await attachMemoryStartTrace({ trace, userId, memoryViews });
+    await finalizeMemoryCycle({ trace, userId, inputAnalysis, policyDecision });
+    trace.updatedAt = new Date();
+    await trace.save();
+    return trace;
   }
 
   const plannerResult = await createPlan(goal, memory);
@@ -538,13 +682,30 @@ async function runAgentTask({ userId, goal }) {
       }
     ]
   });
+  await attachMemoryStartTrace({ trace, userId, memoryViews });
 
   const toolResults = {};
   const adjustments = [];
+  const pendingConfirmActions = [];
 
   try {
     for (const step of plannerResult.toolSteps || []) {
       const input = resolveStepInput(step, toolResults);
+      if (isConfirmationOnlyTool(step.toolName)) {
+        pendingConfirmActions.push({
+          toolName: step.toolName,
+          input
+        });
+        trace.steps.push({
+          type: 'decision',
+          title: `等待用户确认：${step.toolName}`,
+          toolName: step.toolName,
+          input,
+          summary: '这是会改变平台数据或扣除余额的高影响工具，Agent 只生成确认卡片，不会自动执行。'
+        });
+        continue;
+      }
+
       const output = await executeToolStep({
         trace,
         userId,
@@ -637,7 +798,7 @@ async function runAgentTask({ userId, goal }) {
       ...buildRefundCards(toolResults.get_refund_status),
       ...buildTransactionCards(toolResults.get_recent_transactions)
     ];
-    const actionCards = buildActionCards(plannerResult.intent, goal, toolResults);
+    const actionCards = buildActionCards(plannerResult.intent, goal, toolResults, pendingConfirmActions);
     const finalSummary = await buildFinalSummaryWithModel({
       goal,
       plannerResult,
@@ -675,6 +836,14 @@ async function runAgentTask({ userId, goal }) {
     trace.resultCards = resultCards;
     trace.actionCards = actionCards;
     trace.updatedAt = new Date();
+    await finalizeMemoryCycle({
+      trace,
+      userId,
+      inputAnalysis,
+      policyDecision,
+      plannerResult,
+      toolResults
+    });
     await trace.save();
     await appendContextTurn(userId, {
       goal,
@@ -726,6 +895,9 @@ async function confirmAgentAction({ userId, runId, actionType, payload }) {
     userId,
     input: payload || matchedCard.payload || {}
   });
+  const publishedQuestionCard = actionType === 'create_question'
+    ? buildPublishedQuestionCard(output)
+    : null;
 
   trace.steps.push({
     type: 'tool_call',
@@ -736,7 +908,12 @@ async function confirmAgentAction({ userId, runId, actionType, payload }) {
     summary: '用户已确认，高影响动作现在才真正执行。'
   });
   trace.status = 'completed';
-  trace.finalAnswer = '已根据你的确认完成操作。';
+  trace.finalAnswer = actionType === 'create_question'
+    ? `问题「${output.title || ''}」已发布成功，赏金 ${output.reward || 0} 元已扣除。`
+    : '已根据你的确认完成操作。';
+  if (publishedQuestionCard) {
+    trace.resultCards = [publishedQuestionCard, ...(trace.resultCards || [])];
+  }
   trace.actionCards = [];
   trace.updatedAt = new Date();
   await trace.save();

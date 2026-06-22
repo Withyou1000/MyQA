@@ -48,7 +48,7 @@ router.get('/search', async (req, res) => {
  */
 router.post('/questions', authMiddleware, async (req, res) => {
   try {
-    const { title, topic, tags, reward, images } = req.body;
+    const { title, content, topic, tags, reward, images } = req.body;
     const userId = req.user.userId;
 
 
@@ -73,6 +73,7 @@ router.post('/questions', authMiddleware, async (req, res) => {
     // 创建问题
     const newQuestion = new QuestionModel({
       title,
+      content: content || '',
       topic,
       tags: tags || [],
       reward,
@@ -97,6 +98,8 @@ router.post('/questions', authMiddleware, async (req, res) => {
       message: '发布成功',
       data: {
         questionId: questionId,
+        title,
+        content: content || '',
         createTime: newQuestion.createTime
       }
     });
@@ -170,6 +173,7 @@ router.get('/:questionId', async (req, res) => {
       data: {
         questionId: question._id,
         title: question.title,
+        content: question.content || '',
         topic: question.topic,
         tags: question.tags,
         reward: question.reward,

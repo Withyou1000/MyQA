@@ -87,6 +87,53 @@ function scoreQuestion(question, memory) {
   return avoidPenalty + preferenceScore + rewardScore + freshnessScore;
 }
 
+/**
+ * 把模型或确认卡传入的发题参数清洗成数据库可接受的结构。
+ * Agent 工具不能完全信任模型输出，所以这里统一裁剪长度、过滤空标签并校验赏金数字。
+ */
+function normalizeQuestionDraft(input = {}) {
+  const content = String(input.content || input.description || '').trim().slice(0, 1000);
+  const title = String(input.title || content).trim().slice(0, 80);
+  const rawTopic = String(input.topic || input.category || '').trim().slice(0, 30);
+  const topic = /^(Java|前端|Vue|Node|Python|AI)$/i.test(rawTopic) ? '编程' : rawTopic;
+  const reward = Number(input.reward || 0);
+  const inputTags = Array.isArray(input.tags)
+    ? input.tags.map((tag) => String(tag || '').trim()).filter(Boolean).slice(0, 3)
+    : [];
+  const tags = rawTopic && rawTopic !== topic && !inputTags.includes(rawTopic)
+    ? [rawTopic, ...inputTags].slice(0, 3)
+    : inputTags;
+  const images = Array.isArray(input.images)
+    ? input.images.map((image) => String(image || '').trim()).filter(Boolean).slice(0, 3)
+    : [];
+
+  return {
+    title,
+    content,
+    topic,
+    tags,
+    reward: Number.isFinite(reward) ? reward : 0,
+    images
+  };
+}
+
+/**
+ * 校验发题草稿是否具备真正发布所需的最小字段。
+ * 缺字段时抛出明确错误，最终会展示给用户，避免静默发布一个不完整问题。
+ */
+function validateQuestionDraft(draft) {
+  const missingFields = [];
+  if (!draft.title) missingFields.push('title');
+  if (!draft.topic) missingFields.push('topic');
+  if (!draft.reward || draft.reward <= 0) missingFields.push('reward');
+
+  if (missingFields.length) {
+    const error = new Error(`发布问题缺少必要字段：${missingFields.join(', ')}`);
+    error.missingFields = missingFields;
+    throw error;
+  }
+}
+
 const tools = {
   get_user_profile: {
     name: 'get_user_profile',
@@ -404,6 +451,63 @@ const tools = {
           error: error.message
         };
       }
+    }
+  },
+
+  create_question: {
+    name: 'create_question',
+    description: '用户确认后发布一个新问题，并从当前用户余额中扣除赏金。高影响写操作，必须通过 action-confirm 确认后才执行。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        content: { type: 'string' },
+        topic: { type: 'string' },
+        tags: { type: 'array' },
+        reward: { type: 'number' },
+        images: { type: 'array' }
+      }
+    },
+    async handler({ userId, input = {} }) {
+      const draft = normalizeQuestionDraft(input);
+      validateQuestionDraft(draft);
+
+      const user = await UserModel.findById(userId).select('balance');
+      if (!user) {
+        throw new Error('用户不存在，无法发布问题');
+      }
+      if (Number(user.balance || 0) < draft.reward) {
+        throw new Error(`余额不足，当前余额 ${user.balance || 0} 元，发布需要 ${draft.reward} 元`);
+      }
+
+      // 发布问题会扣除余额，属于高影响写操作；真正调用此 handler 的入口只有用户确认后的 action-confirm。
+      const newQuestion = await QuestionModel.create({
+        title: draft.title,
+        content: draft.content,
+        topic: draft.topic,
+        tags: draft.tags,
+        reward: draft.reward,
+        images: draft.images,
+        status: 'pending',
+        createTime: new Date(),
+        author: userId
+      });
+
+      await UserModel.findByIdAndUpdate(userId, {
+        $inc: { balance: -draft.reward }
+      });
+
+      return {
+        questionId: newQuestion._id,
+        title: newQuestion.title,
+        content: newQuestion.content || '',
+        topic: newQuestion.topic,
+        tags: newQuestion.tags || [],
+        reward: newQuestion.reward,
+        status: newQuestion.status,
+        createTime: newQuestion.createTime,
+        remainingBalance: Number(user.balance || 0) - draft.reward
+      };
     }
   },
 

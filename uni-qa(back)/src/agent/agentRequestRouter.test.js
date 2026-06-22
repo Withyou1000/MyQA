@@ -82,3 +82,15 @@ test('同一句同时包含当前任务和未来偏好时保留 task', () => {
   assert.equal(route.shouldExecuteTools, true);
   assert.equal(route.confidenceDecision, 'accepted');
 });
+
+test('发布问题属于明确执行任务，会进入确认型工具流程', () => {
+  const route = finalizeRoute('帮我发布一个 Java 多线程问题，赏金 30 元', emptyMemoryExtraction, {
+    mode: 'chat',
+    confidence: 0.3,
+    shouldExecuteTools: false
+  });
+
+  assert.equal(route.mode, 'task');
+  assert.equal(route.shouldExecuteTools, true);
+  assert.equal(route.confidenceDecision, 'accepted');
+});

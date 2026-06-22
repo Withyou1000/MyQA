@@ -84,12 +84,16 @@ flowchart TD
 | `src/agent/agentRequestRouter.js` | 路由归一化、confidence 策略和规则保护 |
 | `src/agent/agentRequestRouter.test.js` | confidence、缺参追问和 Guard 的单元测试 |
 | `src/agent/agentMemoryExtractor.js` | 归一化 memoryPatch，并提供规则兜底记忆补丁 |
+| `src/agent/agentMemoryPolicy.js` | 判断记忆补丁应该写入、忽略还是遗忘 |
+| `src/agent/agentMemoryLedgerService.js` | 追加 Ledger 事件并刷新 Memory Views |
 | `src/agent/agentMemoryService.js` | 保存长期偏好和最近 3 轮上下文 |
 | `src/agent/agentPlanner.js` | 选择、校验并排序工具步骤 |
 | `src/agent/agentToolRegistry.js` | 统一注册和调用平台工具 |
 | `src/agent/agentEvaluator.js` | 判断搜索结果是否足够并生成修正参数 |
 | `src/agent/agentFinalSummarizer.js` | 基于真实执行结果生成最终回答 |
 | `src/models/AgentMemoryModel.js` | MongoDB 记忆模型 |
+| `src/models/AgentMemoryLedgerModel.js` | MongoDB 记忆原始账本模型 |
+| `src/models/AgentMemoryViewModel.js` | MongoDB 派生记忆视图模型 |
 | `src/models/AgentTraceModel.js` | MongoDB 执行轨迹模型 |
 
 ### 3.2 前端
@@ -760,7 +764,7 @@ const toolSteps = rawSteps
 
 位置：`src/agent/agentToolRegistry.js`
 
-当前共注册 9 个工具：
+当前共注册 10 个工具：
 
 | 工具 | 作用 |
 | --- | --- |
@@ -772,6 +776,7 @@ const toolSteps = rawSteps
 | `get_recent_transactions` | 查询最近问答交易 |
 | `get_refund_status` | 查询退款记录和状态 |
 | `search_knowledge_base` | 检索现有 RAG 知识库 |
+| `create_question` | 用户确认后发布问题并扣除赏金 |
 | `create_handoff_request` | 用户确认后创建人工客服请求 |
 
 每个工具遵循接近 MCP Tool 的结构：
@@ -1082,7 +1087,12 @@ return isExpanded(item.runId) ? steps : steps.slice(0, 4);
 
 ## 21. Human-in-the-loop
 
-当前高影响动作是 `create_handoff_request`。
+当前高影响动作包括：
+
+| 动作 | 为什么需要确认 |
+| --- | --- |
+| `create_handoff_request` | 会暂停 AI 客服并创建人工客服请求 |
+| `create_question` | 会公开发布问题，并从用户余额中扣除赏金 |
 
 第一次运行时，Agent 只生成动作卡片：
 
@@ -1115,6 +1125,24 @@ POST /agent/action-confirm
 3. 验证通过后才调用工具。
 
 执行成功后清空动作卡片，并把 Trace 状态改为 `completed`。
+
+发布问题也是同样逻辑。Planner 可以选择 `create_question`，但 Executor 发现它属于确认型工具后不会直接调用，只会写入一条“等待用户确认”的 Trace，并生成确认卡：
+
+```json
+{
+  "type": "publish_question_confirm",
+  "confirmAction": "create_question",
+  "payload": {
+    "title": "Java 多线程怎么学习",
+    "content": "我想系统学习 Java 多线程，请给路线建议",
+    "topic": "Java",
+    "tags": ["Java"],
+    "reward": 30
+  }
+}
+```
+
+用户确认后，`confirmAgentAction` 才真正调用 `create_question`。工具会校验标题、分类、赏金和余额，成功后创建 `QuestionModel` 并扣除余额。
 
 ## 22. 完整例子：帮我找 Java 高赏金问题
 
@@ -1325,6 +1353,9 @@ get_user_profile
 | --- | --- | --- |
 | `GET` | `/agent/tools` | 查看当前工具定义 |
 | `GET` | `/agent/memory` | 查看当前用户记忆 |
+| `GET` | `/agent/memory/ledger` | 查看当前用户 Memory Ledger 原始账本 |
+| `GET` | `/agent/memory/views` | 查看当前用户 Memory Views 派生视图 |
+| `POST` | `/agent/memory/forget` | 追加用户主动遗忘记忆事件 |
 | `POST` | `/agent/runs` | 执行一次输入 |
 | `GET` | `/agent/runs` | 查询历史任务 |
 | `GET` | `/agent/runs/:runId` | 查询单次完整 Trace |
@@ -1375,6 +1406,27 @@ get_question_applicants: {
 - 参数缺失时返回可选择项。
 - 非本人问题不能越权查询。
 - 工具失败时 Trace 保存 `error`。
+
+### 发布问题工具的特殊点
+
+`create_question` 和查询类工具不一样，它会改变数据库并扣除用户余额，所以不能在普通 `tool_call` 阶段直接执行。
+
+当前链路是：
+
+```text
+用户：帮我发布一个 Java 多线程问题，赏金 30 元
+  -> Router 判断为 task
+  -> Planner 选择 create_question，并设置 needsConfirmation=true
+  -> Executor 识别 create_question 是确认型工具
+  -> 不调用 handler，只生成 publish_question_confirm 动作卡
+  -> 用户点击确认
+  -> /agent/action-confirm 校验 Trace 属于当前用户
+  -> 校验 actionCards 里确实有 create_question
+  -> callTool('create_question')
+  -> 创建 QuestionModel，扣除余额，返回 published_question 结果卡
+```
+
+这体现了 Agent 的 Human-in-the-loop：模型可以规划动作，但高影响动作必须由用户确认后才能执行。形象理解就是“Agent 可以帮你填好发题表单，但不能替你直接点提交扣钱”。
 
 ## 26. 排查问题时看哪些字段
 
@@ -2378,6 +2430,97 @@ memorySnapshot.preferences
 ```text
 普通 AI 客服像“会聊天的人”。
 这个 Agent 更像“会判断任务、会调用工具、会记录过程、会在不确定时追问的执行助手”。
+```
+
+## 41. Memory 2.0 当前落地版本
+
+当前代码已经把记忆从“偏好字段 + 最近上下文”升级成一个可观察闭环：
+
+```text
+AgentInputAnalyzer
+  -> memoryPatch
+  -> AgentMemoryPolicy
+  -> AgentMemoryLedger
+  -> AgentMemoryViews
+```
+
+### 41.1 Policy
+
+位置：`src/agent/agentMemoryPolicy.js`
+
+Policy 只做一件事：判断 `memoryPatch` 是否应该进入长期账本。
+
+核心输出：
+
+```json
+{
+  "shouldWrite": true,
+  "eventType": "memory_write",
+  "memoryType": "preference",
+  "action": "write",
+  "reason": "用户表达了稳定偏好，Policy 允许写入长期记忆账本。"
+}
+```
+
+如果 `confidence < 0.45`，或者 `shouldRemember=false`，Policy 会输出 `memory_ignore`。这让页面能解释“为什么没记”。
+
+### 41.2 Ledger
+
+位置：`src/models/AgentMemoryLedgerModel.js` 和 `src/agent/agentMemoryLedgerService.js`
+
+Ledger 是只追加账本。它不会修改旧事件，而是记录：
+
+- `memory_read`：本轮读了哪些 Views。
+- `memory_write`：Policy 允许写入的偏好。
+- `memory_ignore`：Policy 忽略的内容。
+- `memory_forget`：用户主动遗忘或删除偏好。
+- `tool_success`：成功执行过的工具链。
+
+它区分两个时间：
+
+```text
+validTime：这条记忆在现实中什么时候生效
+transactionTime：系统什么时候记录这条账本事件
+```
+
+### 41.3 Views
+
+位置：`src/models/AgentMemoryViewModel.js`
+
+Views 是从当前记忆和 Ledger 派生出来的结构化视图，首版不接向量库：
+
+```json
+{
+  "profileView": {
+    "topics": ["前端"],
+    "keywords": ["Vue", "Node"],
+    "minReward": 30,
+    "avoidTopics": ["硬件"]
+  },
+  "recentContextView": [],
+  "timelineView": [],
+  "toolSuccessView": []
+}
+```
+
+Planner 运行前会读取 Views，并在 Trace 中写入 `memory_read`，前端可以看到“本次参考了哪些记忆”。
+
+### 41.4 前端可视化
+
+Agent 页面新增了三个 Tab：
+
+| Tab | 展示内容 |
+| --- | --- |
+| `Policy` | 本轮为什么写入、忽略或遗忘记忆 |
+| `Ledger` | 最近原始账本事件 |
+| `Views` | 当前偏好、关键词、最低赏金和规避主题 |
+
+这对应 Memory 系统三件套：
+
+```text
+Policy 控制策略
+Ledger 原始账本
+Views 派生视图
 ```
 
 

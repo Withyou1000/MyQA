@@ -299,6 +299,7 @@ const handleSubmit = async () => {
 
     await questionApi.createQuestion({
       title: questionDesc.value.trim(),
+      content: questionDesc.value.trim(),
       topic: selectedTopic.value,
       tags: selectedTags.value,
       reward: Number(reward.value),

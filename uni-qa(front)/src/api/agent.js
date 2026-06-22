@@ -15,6 +15,29 @@ export const agentApi = {
     })
   },
 
+  getMemoryLedger(params = {}) {
+    const query = params.limit ? `?limit=${encodeURIComponent(params.limit)}` : ''
+    return request({
+      url: `/agent/memory/ledger${query}`,
+      method: 'GET'
+    })
+  },
+
+  getMemoryViews() {
+    return request({
+      url: '/agent/memory/views',
+      method: 'GET'
+    })
+  },
+
+  forgetMemory(payload = {}) {
+    return request({
+      url: '/agent/memory/forget',
+      method: 'POST',
+      data: payload
+    })
+  },
+
   startRun(goal) {
     return request({
       url: '/agent/runs',

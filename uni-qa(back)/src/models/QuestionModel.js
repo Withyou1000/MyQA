@@ -7,6 +7,10 @@ const QuestionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  content: {
+    type: String,
+    default: ''
+  },
   topic: {
     type: String,
     required: true
