@@ -36,8 +36,8 @@ function detectOperation(text) {
 }
 
 /**
- * 模型不可用时的记忆兜底。
- * 这套规则只覆盖常见技术主题和“以后/不要”等明显表达，目标是保证系统可用而不是替代模型理解。
+ * 模型不可用或 memoryPatch 缺字段时的规则兜底。
+ * 这里不再调用模型，只给 AgentInputAnalyzer 的输出补齐默认结构。
  */
 function buildFallbackMemoryPatch(goal) {
   const text = String(goal || '');
@@ -78,7 +78,7 @@ function buildFallbackMemoryPatch(goal) {
 
 /**
  * 统一清洗 memoryPatch。
- * 无论 patch 来自 AgentInputAnalyzer 模型还是规则兜底，都必须经过这里再写入记忆，防止非法字段污染 MongoDB。
+ * 这个文件只做格式归一化和规则兜底，不再承担“单独模型记忆提取器”的职责。
  */
 function normalizeMemoryPatch(rawPatch, goal, source = 'model') {
   const fallback = buildFallbackMemoryPatch(goal);
@@ -114,6 +114,6 @@ function normalizeMemoryPatch(rawPatch, goal, source = 'model') {
 }
 
 module.exports = {
-  normalizeMemoryPatch,
-  buildFallbackMemoryPatch
+  normalizeMemoryPatch
 };
+

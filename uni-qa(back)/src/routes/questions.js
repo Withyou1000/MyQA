@@ -4,6 +4,25 @@ const QuestionModel = require('../models/QuestionModel');
 const UserModel = require('../models/UserModel');
 const authMiddleware = require('../middleware/auth');
 
+// 统一序列化作者信息，保证列表页和详情页都能拿到头像。
+const serializeQuestionAuthor = (author) => {
+  if (!author) {
+    return {
+      _id: '',
+      account: '',
+      name: '',
+      avatar: ''
+    };
+  }
+
+  return {
+    _id: author._id,
+    account: author.account || '',
+    name: author.name || '',
+    avatar: author.avatar || ''
+  };
+};
+
 
 /**
  * 搜索问题
@@ -16,7 +35,7 @@ router.get('/search', async (req, res) => {
     const questions = await QuestionModel.find({
       title: { $regex: keyword, $options: 'i' },
       status: 'pending'
-    }).populate('author', 'account');
+    }).populate('author', 'account name avatar');
 
     res.status(200).json({
       code: 200,
@@ -30,7 +49,7 @@ router.get('/search', async (req, res) => {
           reward: q.reward,
           status: q.status,
           createTime: q.createTime,
-          author: q.author
+          author: serializeQuestionAuthor(q.author)
         }))
       }
     });
@@ -125,7 +144,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
     const questions = await QuestionModel.find(query)
       .sort({ createTime: -1 })  // 按创建时间倒序排列
-      .populate('author', 'account');
+      .populate('author', 'account name avatar');
 
     res.status(200).json({
       code: 200,
@@ -139,7 +158,7 @@ router.get('/', authMiddleware, async (req, res) => {
           reward: q.reward,
           status: q.status,
           createTime: q.createTime,
-          author: q.author
+          author: serializeQuestionAuthor(q.author)
         }))
       }
     });
@@ -159,7 +178,7 @@ router.get('/:questionId', async (req, res) => {
   try {
     const { questionId } = req.params;
 
-    const question = await QuestionModel.findById(questionId).populate('author', 'account');
+    const question = await QuestionModel.findById(questionId).populate('author', 'account name avatar');
 
     if (!question) {
       return res.status(404).json({
@@ -179,7 +198,7 @@ router.get('/:questionId', async (req, res) => {
         reward: question.reward,
         createTime: question.createdAt,
         images: question.images,
-        author: question.author,
+        author: serializeQuestionAuthor(question.author),
         status: question.status
       }
     });

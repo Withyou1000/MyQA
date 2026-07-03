@@ -1,5 +1,6 @@
 <template>
-  <view :class="['customer-service-container', themePageClass]">
+  <view :class="['customer-service-container', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="AI 客服" tone="yellow" />
     <view class="page-header">
       <view class="back-btn" @click="handleBackLogout">
         <text class="back-icon"><</text>

@@ -1,5 +1,6 @@
 <template>
-  <view :class="['register-page', themePageClass]">
+  <view :class="['register-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="注册" tone="coral" />
     <view class="hero-card">
       <text class="eyebrow">Create Account</text>
       <text class="hero-title">把你的问答小屋搭起来</text>
@@ -201,9 +202,13 @@ const goToLogin = () => {
   padding: 36rpx 32rpx;
   border-radius: var(--app-radius-xl);
   background: var(--app-hero-overlay), var(--app-hero-gradient);
-  border: 1rpx solid var(--app-card-border);
+  border: 0;
   box-shadow: var(--app-shadow-soft);
   color: var(--app-hero-text);
+}
+
+.register-page .hero-card::after {
+  display: none !important;
 }
 
 .eyebrow {
@@ -236,7 +241,7 @@ const goToLogin = () => {
   padding: 34rpx 28rpx 40rpx;
   border-radius: var(--app-radius-xl);
   background: var(--app-surface);
-  border: 1rpx solid var(--app-card-border);
+  border: 0;
   box-shadow: var(--app-shadow-card);
 }
 
@@ -252,7 +257,8 @@ const goToLogin = () => {
   padding: 0 28rpx;
   background: var(--app-input-bg);
   border-radius: 26rpx;
-  border: 2rpx solid var(--app-line);
+  border: 0;
+  box-sizing: border-box;
   font-size: 30rpx;
   color: var(--app-ink);
   transition: all 0.25s ease;
@@ -262,7 +268,6 @@ const goToLogin = () => {
   }
 
   &.input-focus {
-    border-color: var(--app-accent);
     background: var(--app-cream-strong);
     box-shadow: 0 0 0 6rpx rgba(255, 127, 150, 0.1);
     box-shadow: 0 0 0 6rpx color-mix(in srgb, var(--app-accent) 10%, transparent);

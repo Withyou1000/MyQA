@@ -13,7 +13,8 @@
         "navigationBarTitleText": "问答",
         "navigationBarBackgroundColor": "transparent",
         "navigationBarTextStyle": "black",
-        "enablePullDownRefresh": true
+        "enablePullDownRefresh": true,
+        "navigationStyle": "custom"
       }
     },
     {
@@ -53,7 +54,8 @@
       "style": {
         "navigationBarTitleText": "消息中心",
         "navigationBarBackgroundColor": "transparent",
-        "navigationBarTextStyle": "black"
+        "navigationBarTextStyle": "black",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -61,7 +63,8 @@
       "style": {
         "navigationBarTitleText": "提问",
         "navigationBarBackgroundColor": "transparent",
-        "navigationBarTextStyle": "black"
+        "navigationBarTextStyle": "black",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -69,7 +72,8 @@
       "style": {
         "navigationBarTitleText": "智能 Agent 助手",
         "navigationBarBackgroundColor": "transparent",
-        "navigationBarTextStyle": "black"
+        "navigationBarTextStyle": "black",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -85,7 +89,8 @@
       "style": {
         "navigationBarTitleText": "个人中心",
         "navigationBarBackgroundColor": "transparent",
-        "navigationBarTextStyle": "black"
+        "navigationBarTextStyle": "black",
+        "navigationStyle": "custom"
       }
     },
     {

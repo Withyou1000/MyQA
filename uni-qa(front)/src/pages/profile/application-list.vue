@@ -1,5 +1,6 @@
 <template>
-  <view :class="['application-page', themePageClass]">
+  <view :class="['application-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="申请列表" tone="mint" />
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-eyebrow">Applicants</text>

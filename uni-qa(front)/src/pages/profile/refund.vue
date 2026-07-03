@@ -1,5 +1,6 @@
 <template>
-  <view :class="['refund-page', themePageClass]">
+  <view :class="['refund-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="申请退款" tone="coral" />
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-eyebrow">Refund Request</text>

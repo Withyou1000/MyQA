@@ -1,5 +1,6 @@
 <template>
-  <view :class="['theme-settings-page', themePageClass]">
+  <view :class="['theme-settings-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="主题设置" tone="lavender" />
     <view class="theme-grid">
       <view
         v-for="item in themeOptions"
@@ -193,5 +194,115 @@ const selectTheme = (theme) => {
 .theme-option-ink .theme-check {
   background: rgba(217, 43, 43, 0.08);
   color: #b43a3a;
+}
+
+/* neon comic theme option preview */
+.theme-option-ink {
+  border: 3rpx solid #111111 !important;
+  background: #dfff13 !important;
+  box-shadow: 8rpx 9rpx 0 rgba(17, 17, 17, 0.14) !important;
+  overflow: hidden;
+}
+
+.theme-option-ink .theme-preview {
+  border: 3rpx solid #111111;
+  background:
+    radial-gradient(circle, rgba(17, 17, 17, 0.08) 1rpx, transparent 1.6rpx) 0 0 / 18rpx 18rpx,
+    #fffdf6 !important;
+}
+
+.theme-option-ink .preview-main {
+  border: 3rpx solid #111111;
+  background: #8be8ff !important;
+}
+
+.theme-option-ink .preview-side {
+  border: 3rpx solid #111111;
+  background: #ff9f7a !important;
+}
+
+.theme-option-ink .preview-side.small {
+  background: #f6ffd7 !important;
+}
+
+.theme-option-ink .theme-name,
+.theme-option-ink .theme-desc,
+.theme-option-ink .theme-check {
+  font-family: inherit !important;
+  color: #111111 !important;
+}
+
+.theme-option-ink .theme-check {
+  border: 2rpx solid #111111;
+  background: #fffdf6 !important;
+}
+
+/* readable inactive theme options */
+.theme-option-light {
+  border: 3rpx solid #111111 !important;
+  background: #fffdf6 !important;
+  box-shadow: 7rpx 8rpx 0 rgba(17, 17, 17, 0.12) !important;
+}
+
+.theme-option-light .theme-preview {
+  border: 2rpx solid rgba(17, 17, 17, 0.28);
+  background: #fff4e8 !important;
+}
+
+.theme-option-light .preview-main {
+  background: #ffd9ca !important;
+}
+
+.theme-option-light .preview-side {
+  background: #ff9f7a !important;
+}
+
+.theme-option-light .preview-side.small {
+  background: #d9f2e2 !important;
+}
+
+.theme-option-light .theme-name,
+.theme-option-light .theme-desc,
+.theme-option-light .theme-check {
+  color: #111111 !important;
+}
+
+.theme-option-light .theme-check {
+  border: 2rpx solid #111111;
+  background: #ffffff !important;
+}
+
+.theme-option-dark {
+  border: 3rpx solid #111111 !important;
+  background: #211a28 !important;
+  box-shadow: 7rpx 8rpx 0 rgba(17, 17, 17, 0.18) !important;
+}
+
+.theme-option-dark .theme-preview {
+  border: 2rpx solid rgba(255, 244, 222, 0.62);
+  background: #2d2433 !important;
+}
+
+.theme-option-dark .preview-main {
+  background: #6c4863 !important;
+}
+
+.theme-option-dark .preview-side {
+  background: #c8879e !important;
+}
+
+.theme-option-dark .preview-side.small {
+  background: #4a3249 !important;
+}
+
+.theme-option-dark .theme-name,
+.theme-option-dark .theme-desc,
+.theme-option-dark .theme-check {
+  color: #fff4de !important;
+}
+
+.theme-option-dark .theme-check {
+  border: 2rpx solid rgba(255, 244, 222, 0.72);
+  background: rgba(255, 244, 222, 0.12) !important;
 }
 </style>

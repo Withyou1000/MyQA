@@ -1,8 +1,9 @@
 <template>
-  <view :class="['my-questions-page', themePageClass]">
+  <view :class="['my-questions-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="我的提问" tone="mint" />
     <view class="hero-card">
       <view class="hero-copy">
-        <text class="hero-eyebrow">My Questions</text>
+        <text class="hero-eyebrow">提问记录</text>
         <text class="hero-title">我的提问</text>
         <text class="hero-desc">管理你发出的每一个问题，看看它们现在走到了哪一步。</text>
       </view>
@@ -12,24 +13,22 @@
       </view>
     </view>
 
-    <view class="summary-row" v-if="questions.length">
-      <view class="summary-pill">
-        <text class="summary-label">待处理</text>
-        <text class="summary-value">{{ getCountByStatus("pending") }}</text>
-      </view>
-      <view class="summary-pill">
-        <text class="summary-label">回答中</text>
-        <text class="summary-value">{{ getCountByStatus("answering") }}</text>
-      </view>
-      <view class="summary-pill">
-        <text class="summary-label">已完成</text>
-        <text class="summary-value">{{ getFinishedCount() }}</text>
+    <view class="summary-row filter-row" v-if="questions.length">
+      <view
+        v-for="filter in statusFilters"
+        :key="filter.key"
+        class="summary-pill filter-pill"
+        :class="{ active: activeFilter === filter.key }"
+        @click="activeFilter = filter.key"
+      >
+        <text class="summary-label">{{ filter.label }}</text>
+        <text class="summary-value">{{ getFilterCount(filter) }}</text>
       </view>
     </view>
 
-    <view class="question-list" v-if="questions.length">
+    <view class="question-list" v-if="filteredQuestions.length">
       <view
-        v-for="question in questions"
+        v-for="question in filteredQuestions"
         :key="question.id"
         class="question-card"
         @click="goToQuestionDetail(question)"
@@ -97,15 +96,15 @@
     </view>
 
     <view class="empty-card" v-else>
-      <text class="empty-title">还没有提问记录</text>
-      <text class="empty-desc">去发布一个问题吧，答案和连接都会慢慢来到这里。</text>
+      <text class="empty-title">{{ questions.length ? `暂无${activeFilterLabel}` : "还没有提问记录" }}</text>
+      <text class="empty-desc">{{ questions.length ? "换个分类看看。" : "去发布一个问题吧。" }}</text>
     </view>
   </view>
 </template>
 
 <script setup>
 import { onShow } from "@dcloudio/uni-app";
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { userApi } from "@/api/common";
 import { applyApi } from "@/api";
 import { refundApi } from "@/api/refund";
@@ -114,7 +113,25 @@ import { questionApi } from "@/api/question";
 
 const questions = ref([]);
 const loading = ref(false);
+const activeFilter = ref("processing");
 
+const statusFilters = [
+  { key: "processing", label: "进行中", statuses: ["answering", "refunding"] },
+  { key: "completed", label: "已完成", statuses: ["accepted", "rated", "refunded"] },
+  { key: "pending", label: "待处理", statuses: ["pending", "rejected"] },
+];
+
+const filteredQuestions = computed(() => {
+  const current = statusFilters.find((item) => item.key === activeFilter.value) || statusFilters[0];
+  return questions.value.filter((item) => current.statuses.includes(item.status));
+});
+
+const activeFilterLabel = computed(() => {
+  const current = statusFilters.find((item) => item.key === activeFilter.value);
+  return current?.label || "记录";
+});
+
+const getFilterCount = (filter) => questions.value.filter((item) => filter.statuses.includes(item.status)).length;
 const statusMap = {
   pending: "待处理",
   answering: "回答中",
@@ -133,11 +150,6 @@ const formatDate = (value) => {
     date.getDate()
   ).padStart(2, "0")}`;
 };
-
-const getCountByStatus = (status) => questions.value.filter((item) => item.status === status).length;
-
-const getFinishedCount = () =>
-  questions.value.filter((item) => ["accepted", "rated", "refunded"].includes(item.status)).length;
 
 const viewRating = (question) => {
   uni.navigateTo({
@@ -361,6 +373,10 @@ const goToQuestionDetail = (question) => {
   box-shadow: var(--app-shadow-soft);
 }
 
+.my-questions-page .hero-card::after {
+  display: none !important;
+}
+
 .hero-copy {
   flex: 1;
 }
@@ -446,6 +462,15 @@ const goToQuestionDetail = (question) => {
   font-size: 34rpx;
   font-weight: 700;
   color: var(--app-ink);
+}
+.filter-pill {
+  border: 2rpx solid rgba(43, 37, 40, 0.16);
+}
+
+.filter-pill.active {
+  border-color: var(--qa-ink, #2b2528);
+  background: var(--qa-yellow, #ffd15d);
+  box-shadow: 4rpx 5rpx 0 rgba(43, 37, 40, 0.1);
 }
 
 .question-list {

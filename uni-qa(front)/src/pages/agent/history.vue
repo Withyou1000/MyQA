@@ -1,10 +1,11 @@
 <template>
-  <view :class="['agent-history-page', themePageClass]">
-    <view class="page-head">
+  <view :class="['agent-history-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="Agent 历史" tone="lavender" />
+
+    <view class="page-toolbar">
       <view>
-        <text class="eyebrow">Agent Memory</text>
-        <text class="title">Agent 历史记录</text>
-        <text class="desc">回看你给 Agent 的任务、执行状态、工具轨迹和最终回答。</text>
+        <text class="page-title">历史记录</text>
+        <text class="page-desc">查看任务、结果和执行过程</text>
       </view>
       <button class="refresh-btn" :disabled="loading" @click="loadHistory">
         {{ loading ? '刷新中' : '刷新' }}
@@ -12,24 +13,33 @@
     </view>
 
     <view v-if="!historyList.length && !loading" class="empty-card">
-      <text>还没有 Agent 历史记录。先回到 Agent 助手执行一个任务。</text>
+      <text class="empty-title">还没有历史记录</text>
+      <text class="empty-desc">先去 Agent 助手执行一次任务</text>
     </view>
 
     <view v-for="item in historyList" :key="item.runId" class="history-card">
       <view class="history-top">
-        <text class="status-pill">{{ formatStatus(item.status) }}</text>
-        <text class="time-text">{{ formatTime(item.updatedAt || item.createdAt) }}</text>
+        <view class="status-wrap">
+          <text class="status-pill" :class="statusClass(item.status)">{{ formatStatus(item.status) }}</text>
+          <text class="time-text">{{ formatTime(item.updatedAt || item.createdAt) }}</text>
+        </view>
+        <view class="meta-row compact-meta">
+          <text>{{ item.steps?.length || 0 }} 步</text>
+          <text>{{ item.resultCards?.length || 0 }} 张结果卡</text>
+        </view>
       </view>
 
-      <text class="goal-text">{{ item.goal }}</text>
-      <text class="answer-text">{{ item.finalAnswer || '这次任务还没有最终回答。' }}</text>
-
-      <view class="meta-row">
-        <text>{{ item.steps?.length || 0 }} 个执行步骤</text>
-        <text>{{ item.resultCards?.length || 0 }} 张结果卡片</text>
+      <view class="section-block task-block">
+        <text class="section-label">任务</text>
+        <text class="goal-text">{{ item.goal || '未填写任务内容' }}</text>
       </view>
 
-      <view class="tool-row">
+      <view class="section-block answer-block">
+        <text class="section-label">结果</text>
+        <text class="answer-text">{{ item.finalAnswer || '这次任务还没有最终结果。' }}</text>
+      </view>
+
+      <view v-if="collectTools(item).length" class="tool-row">
         <text
           v-for="tool in collectTools(item)"
           :key="`${item.runId}-${tool}`"
@@ -40,25 +50,30 @@
       </view>
 
       <view class="step-list">
+        <view class="section-line">
+          <text class="section-label">执行过程</text>
+        </view>
+
         <view v-for="(step, index) in visibleSteps(item)" :key="`${item.runId}-${index}`" class="step-row">
           <text class="step-index">{{ index + 1 }}</text>
           <view class="step-body">
             <view class="step-head">
-              <text class="step-type">{{ formatStepType(step.type) }}</text>
+              <text class="step-type" :class="stepToneClass(step.type)">{{ formatStepType(step.type) }}</text>
               <text class="step-title">{{ step.title || step.toolName || 'Agent 步骤' }}</text>
             </view>
             <text v-if="step.summary" class="step-summary">{{ step.summary }}</text>
-            <text v-if="step.toolName" class="step-tool">tool: {{ step.toolName }}</text>
-            <view v-if="step.input" class="json-box">
-              <text class="json-label">输入</text>
-              <text class="json-text">{{ compactJson(step.input) }}</text>
+            <text v-if="step.toolName" class="step-tool">{{ step.toolName }}</text>
+            <view v-if="step.input" class="detail-box">
+              <text class="detail-label">输入</text>
+              <text class="detail-text">{{ summarizePayload(step.input) }}</text>
             </view>
-            <view v-if="step.output" class="json-box">
-              <text class="json-label">输出</text>
-              <text class="json-text">{{ compactJson(step.output) }}</text>
+            <view v-if="step.output" class="detail-box">
+              <text class="detail-label">输出</text>
+              <text class="detail-text">{{ summarizePayload(step.output) }}</text>
             </view>
           </view>
         </view>
+
         <button
           v-if="hasHiddenSteps(item)"
           class="toggle-steps-btn"
@@ -106,6 +121,17 @@ const formatStatus = (status) => {
   return map[status] || status || '未知'
 }
 
+const statusClass = (status) => {
+  const map = {
+    running: 'is-running',
+    waiting_confirmation: 'is-waiting',
+    waiting_clarification: 'is-waiting',
+    completed: 'is-done',
+    failed: 'is-failed'
+  }
+  return map[status] || 'is-default'
+}
+
 const formatTime = (value) => {
   if (!value) return ''
   const date = new Date(value)
@@ -120,11 +146,11 @@ const formatStepType = (type) => {
     tool_call: '工具调用',
     observation: '观察',
     evaluation: '评估',
-    react_reason: 'ReAct 修正',
+    react_reason: '修正',
     react_action: '再次调用',
     react_observation: '再次观察',
     memory: '记忆',
-    chat: '聊天',
+    chat: '对话',
     clarification: '追问',
     decision: '决策',
     final: '完成',
@@ -133,17 +159,30 @@ const formatStepType = (type) => {
   return map[type] || type || '步骤'
 }
 
-const compactJson = (value) => {
+const stepToneClass = (type) => {
+  const map = {
+    tool_call: 'tone-blue',
+    observation: 'tone-green',
+    evaluation: 'tone-purple',
+    final: 'tone-orange',
+    error: 'tone-red'
+  }
+  return map[type] || 'tone-default'
+}
+
+const summarizePayload = (value) => {
+  if (value == null) return ''
+  if (typeof value === 'string') return value
   try {
-    return JSON.stringify(value)
+    const text = JSON.stringify(value, null, 2)
+    return text.length > 180 ? `${text.slice(0, 180)}...` : text
   } catch (error) {
-    return String(value || '')
+    return String(value)
   }
 }
 
 const collectTools = (item) => {
   const steps = Array.isArray(item.steps) ? item.steps : []
-  // 工具名称从 trace 中提取，用户可以直观看到 Agent 曾经调用过哪些平台能力。
   return Array.from(new Set(steps.map((step) => step.toolName).filter(Boolean))).slice(0, 6)
 }
 
@@ -151,7 +190,6 @@ const isExpanded = (runId) => Boolean(expandedRunIds.value[runId])
 
 const visibleSteps = (item) => {
   const steps = Array.isArray(item.steps) ? item.steps : []
-  // 历史卡片默认保留摘要视图，步骤较多时用户可以展开查看完整 trace。
   return isExpanded(item.runId) ? steps : steps.slice(0, 4)
 }
 
@@ -176,7 +214,7 @@ const toggleSteps = (runId) => {
   background-color: var(--app-page-bg-color, #fff9f6);
 }
 
-.page-head,
+.page-toolbar,
 .history-card,
 .empty-card {
   margin-bottom: 22rpx;
@@ -186,143 +224,203 @@ const toggleSteps = (runId) => {
   box-shadow: var(--app-shadow-card);
 }
 
-.page-head {
+.page-toolbar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 20rpx;
-  background: linear-gradient(135deg, #1f2937, #0f766e);
-  color: #fff;
 }
 
-.eyebrow {
-  display: inline-flex;
-  padding: 8rpx 18rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.14);
-  font-size: 20rpx;
-}
-
-.title {
+.page-title {
   display: block;
-  margin-top: 18rpx;
-  font-size: 40rpx;
+  color: var(--app-ink);
+  font-size: 34rpx;
   font-weight: 700;
 }
 
-.desc {
+.page-desc {
   display: block;
-  margin-top: 14rpx;
-  font-size: 24rpx;
-  line-height: 1.7;
-  opacity: 0.88;
+  margin-top: 10rpx;
+  color: var(--app-ink-soft);
+  font-size: 23rpx;
 }
 
 .refresh-btn {
   margin: 0;
-  width: 110rpx;
-  height: 58rpx;
-  line-height: 58rpx;
+  width: 112rpx;
+  height: 60rpx;
+  line-height: 60rpx;
   border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  background: var(--app-surface-soft);
+  color: var(--app-accent-strong);
   font-size: 22rpx;
   flex-shrink: 0;
 }
 
+.empty-card {
+  text-align: center;
+}
+
+.empty-title {
+  display: block;
+  color: var(--app-ink);
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.empty-desc {
+  display: block;
+  margin-top: 10rpx;
+  color: var(--app-ink-muted);
+  font-size: 23rpx;
+}
+
 .history-top,
+.status-wrap,
 .meta-row,
-.tool-row {
+.tool-row,
+.plan-foot,
+.step-head,
+.section-line {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12rpx;
 }
 
 .history-top {
   justify-content: space-between;
+  gap: 16rpx;
 }
 
-.status-pill,
-.tool-chip {
-  display: inline-flex;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  background: var(--app-accent-badge-bg);
-  color: var(--app-accent-strong);
+.compact-meta {
+  color: var(--app-ink-muted);
   font-size: 22rpx;
 }
 
-.time-text,
-.meta-row,
-.empty-card {
+.status-pill,
+.tool-chip,
+.step-tool,
+.step-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 600;
+}
+
+.status-pill.is-running,
+.step-type.tone-blue {
+  background: rgba(77, 138, 255, 0.12);
+  color: #3468d6;
+}
+
+.status-pill.is-waiting,
+.step-type.tone-purple {
+  background: rgba(136, 92, 246, 0.12);
+  color: #7c3aed;
+}
+
+.status-pill.is-done,
+.step-type.tone-green {
+  background: rgba(16, 185, 129, 0.12);
+  color: #0f9b6c;
+}
+
+.status-pill.is-failed,
+.step-type.tone-red {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.status-pill.is-default,
+.step-type.tone-default,
+.step-type.tone-orange {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.time-text {
   color: var(--app-ink-muted);
-  font-size: 23rpx;
+  font-size: 22rpx;
+}
+
+.section-block {
+  margin-top: 18rpx;
+  padding: 20rpx;
+  border-radius: 22rpx;
+  background: rgba(255, 248, 236, 0.7);
+}
+
+.section-label {
+  display: block;
+  color: var(--app-accent-strong);
+  font-size: 22rpx;
+  font-weight: 700;
 }
 
 .goal-text {
   display: block;
-  margin-top: 18rpx;
+  margin-top: 10rpx;
   color: var(--app-ink);
-  font-size: 30rpx;
+  font-size: 29rpx;
   line-height: 1.55;
   font-weight: 700;
 }
 
 .answer-text {
   display: block;
-  margin-top: 12rpx;
+  margin-top: 10rpx;
   color: var(--app-ink-soft);
-  font-size: 25rpx;
+  font-size: 24rpx;
   line-height: 1.7;
 }
 
-.meta-row,
 .tool-row,
 .step-list {
-  margin-top: 16rpx;
+  margin-top: 18rpx;
+}
+
+.tool-chip {
+  background: var(--app-accent-badge-bg);
+  color: var(--app-accent-strong);
+}
+
+.section-line {
+  margin-bottom: 8rpx;
 }
 
 .step-row {
   display: flex;
   align-items: flex-start;
   gap: 14rpx;
-  padding: 14rpx 0;
+  padding: 18rpx 0;
   border-top: 1rpx solid var(--app-line);
 }
 
 .step-index {
-  width: 38rpx;
-  height: 38rpx;
+  width: 42rpx;
+  height: 42rpx;
   border-radius: 50%;
-  background: #0f766e;
+  background: var(--app-accent-strong);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20rpx;
+  font-size: 21rpx;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
 .step-body {
-  flex: 1;
   min-width: 0;
-}
-
-.step-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.step-type {
-  color: #0f766e;
-  font-size: 21rpx;
-  font-weight: 700;
+  flex: 1;
 }
 
 .step-title {
-  color: var(--app-ink-soft);
+  color: var(--app-ink);
   font-size: 24rpx;
   line-height: 1.5;
   font-weight: 700;
@@ -330,31 +428,27 @@ const toggleSteps = (runId) => {
 
 .step-summary {
   display: block;
-  margin-top: 8rpx;
+  margin-top: 10rpx;
   color: var(--app-ink-soft);
   font-size: 23rpx;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 .step-tool {
-  display: inline-flex;
   width: fit-content;
   margin-top: 10rpx;
-  padding: 7rpx 14rpx;
-  border-radius: 999rpx;
-  background: rgba(15, 118, 110, 0.1);
-  color: #0f766e;
-  font-size: 21rpx;
+  background: rgba(15, 118, 110, 0.08);
+  color: var(--app-accent-strong);
 }
 
-.json-box {
+.detail-box {
   margin-top: 10rpx;
-  padding: 12rpx;
-  border-radius: 14rpx;
-  background: rgba(15, 23, 42, 0.06);
+  padding: 14rpx 16rpx;
+  border-radius: 16rpx;
+  background: rgba(15, 23, 42, 0.05);
 }
 
-.json-label {
+.detail-label {
   display: block;
   margin-bottom: 6rpx;
   color: var(--app-accent-strong);
@@ -362,15 +456,16 @@ const toggleSteps = (runId) => {
   font-weight: 700;
 }
 
-.json-text {
+.detail-text {
   color: var(--app-ink-muted);
   font-size: 20rpx;
-  line-height: 1.5;
+  line-height: 1.55;
+  white-space: pre-wrap;
   word-break: break-all;
 }
 
 .toggle-steps-btn {
-  margin: 16rpx 0 0;
+  margin: 18rpx 0 0;
   height: 58rpx;
   line-height: 58rpx;
   border-radius: 999rpx;

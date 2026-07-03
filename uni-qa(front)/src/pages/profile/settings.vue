@@ -1,31 +1,40 @@
 <template>
-  <view :class="['settings-page', themePageClass]">
+  <view :class="['settings-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="设置" tone="yellow" />
     <view class="settings-list">
       <view class="settings-item" @click="goToEditProfile">
+        <view class="setting-icon setting-icon-profile">
+          <image class="icon-svg" src="/static/images/nav-profile.svg" mode="aspectFit" />
+        </view>
         <view class="item-left">
           <text class="item-title">编辑个人主页</text>
-          <text class="item-desc">修改昵称、头像和个人资料</text>
+          
         </view>
-        <text class="item-meta">></text>
+        <text class="item-meta">›</text>
       </view>
 
       <view class="settings-item" @click="goToThemeSettings">
+        <view class="setting-icon setting-icon-theme">
+          <image class="icon-svg" src="/static/images/ui-gear.svg" mode="aspectFit" />
+        </view>
         <view class="item-left">
           <text class="item-title">主题外观</text>
-          <text class="item-desc">当前：{{ currentThemeLabel }}</text>
+          <text class="item-pill">{{ currentThemeLabel }}</text>
         </view>
-        <text class="item-meta">></text>
+        <text class="item-meta">›</text>
       </view>
 
       <view class="settings-item logout-item" @click="handleLogout">
+        <view class="setting-icon setting-icon-logout">
+          <image class="icon-svg" src="/static/images/ui-close.svg" mode="aspectFit" />
+        </view>
         <view class="item-left">
           <text class="item-title">退出账号</text>
-          <text class="item-desc">退出当前登录，并回到登录页</text>
+          
         </view>
-        <text class="item-meta">></text>
+        <text class="item-meta">›</text>
       </view>
-    </view>
-  </view>
+    </view>  </view>
 </template>
 
 <script setup>
@@ -87,48 +96,89 @@ const handleLogout = () => {
 }
 
 .settings-list {
-  background: var(--app-surface);
-  border-radius: 28rpx;
-  box-shadow: var(--app-shadow-card);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
 }
 
 .settings-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 20rpx;
-  padding: 28rpx 24rpx;
-  border-bottom: 1rpx solid var(--app-line);
+  gap: 18rpx;
+  padding: 26rpx 24rpx;
+  border: 3rpx solid var(--qa-ink, #2b2528);
+  border-radius: 28rpx;
+  background: rgba(255, 253, 246, 0.94);
+  box-shadow: 5rpx 6rpx 0 rgba(43, 37, 40, 0.08);
 }
 
-.settings-item:last-child {
-  border-bottom: 0;
+.setting-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border: 2rpx solid var(--qa-ink, #2b2528);
+  border-radius: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 64rpx;
+  box-shadow: 3rpx 4rpx 0 rgba(43, 37, 40, 0.08);
+}
+
+.setting-icon .icon-svg {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.setting-icon-profile {
+  background: var(--qa-mint, #a9dcc2);
+}
+
+.setting-icon-theme {
+  background: var(--qa-yellow, #ffd15d);
+}
+
+.setting-icon-logout {
+  background: #ffd5cd;
 }
 
 .item-left {
   flex: 1;
+  min-width: 0;
 }
 
 .item-title {
   display: block;
-  font-size: 30rpx;
-  color: var(--app-ink);
+  color: var(--qa-ink, #2b2528);
+  font-size: 28rpx;
+  font-weight: 900;
 }
 
 .item-desc {
   display: block;
-  margin-top: 10rpx;
+  margin-top: 8rpx;
+  color: var(--qa-soft-text, #6f686b);
   font-size: 22rpx;
-  color: var(--app-ink-muted);
+  line-height: 1.45;
+}
+.item-pill {
+  display: inline-flex;
+  margin-top: 8rpx;
+  padding: 5rpx 12rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 209, 93, 0.42);
+  color: var(--qa-ink, #2b2528);
+  font-size: 20rpx;
+  font-weight: 900;
 }
 
 .item-meta {
-  font-size: 24rpx;
-  color: var(--app-ink-muted);
+  color: var(--qa-ink, #2b2528);
+  font-size: 42rpx;
+  line-height: 1;
+  flex: 0 0 auto;
 }
 
 .logout-item .item-title {
-  color: var(--app-danger-text);
+  color: var(--qa-danger, #ee7674);
 }
 </style>

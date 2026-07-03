@@ -1,104 +1,87 @@
 <template>
-  <view :class="['profile-page', themePageClass]">
-    <view class="hero-card" @click="goToUserDetail">
-      <view class="hero-actions">
-        <!-- <view class="hero-pill" @click.stop="goToVip">会员中心</view> -->
-        <view class="hero-pill settings-pill" @click.stop="goToSettings">设置</view>
+  <view :class="['profile-page', 'prototype-page', themePageClass]">
+    <view class="mock-status">
+      <text>9:41</text>
+      <view class="status-icons">
+        <view class="signal-bars"><text></text><text></text><text></text></view>
+        <view class="wifi-dot"></view>
+        <view class="battery"></view>
       </view>
+    </view>
 
-      <view class="hero-top">
-        <image class="avatar" :src="userInfo.avatar || '/static/default-avatar.webp'" mode="aspectFill" />
-        <view class="hero-copy">
-          <text class="nickname">{{ displayName }}</text>
-          <text class="account">@{{ userInfo.account || "myqa-user" }}</text>
-          <text class="intro">把自己的问答节奏、资料和偏好收进一个舒服的小角落里。</text>
-        </view>
+    <view class="prototype-topbar">
+      <view class="topbar-spacer"></view>
+      <text class="prototype-title">我的</text>
+      <view class="round-icon-button" @click="goToMessage">
+        <image class="icon-svg" src="/static/images/ui-bell.svg" mode="aspectFit" />
       </view>
+    </view>
 
-      <view class="stats-grid">
-        <view class="stat-card">
-          <text class="stat-value">{{ userInfo.reputation || 0 }}</text>
-          <text class="stat-label">信誉值</text>
+    <view class="profile-card prototype-card" @click="goToUserDetail">
+      <image class="profile-avatar" :src="avatarSrc" mode="aspectFill" />
+      <view class="profile-main">
+        <view class="profile-name-row">
+          <text class="profile-name">{{ displayName }}</text>
+          <text class="level-pill">Lv.{{ displayLevel }}</text>
         </view>
-        <view class="stat-card">
-          <text class="stat-value">Lv.{{ userInfo.level || 0 }}</text>
-          <text class="stat-label">等级</text>
+        <text class="profile-id">ID: {{ displayUserId }}</text>
+        <text class="profile-desc">保持好奇，慢慢变强</text>
+      </view>
+      <text class="card-arrow">›</text>
+    </view>
+
+    <view class="stats-card prototype-card">
+      <view class="stat-cell" @click="goToMyQuestions">
+        <text class="stat-label">我的提问</text>
+        <text class="stat-value">{{ questionCount }}</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-cell" @click="goToMyAnswers">
+        <text class="stat-label">我的回答</text>
+        <text class="stat-value">{{ answerCount }}</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-cell" @click="goToVip">
+        <text class="stat-label">会员</text>
+        <text class="vip-value">VIP</text>
+      </view>
+    </view>
+
+    <view class="service-card prototype-card">
+      <text class="prototype-section-title">快捷服务</text>
+      <view class="service-grid">
+        <view class="service-item service-mint" @click="contactCustomerService">
+          <view class="service-icon">
+            <image class="icon-svg" src="/static/images/ui-headset.svg" mode="aspectFit" />
+          </view>
+          <text>AI 客服</text>
         </view>
-        <view class="stat-card">
-          <text class="stat-value">{{ userInfo.balance || 0 }}元</text>
-          <text class="stat-label">余额</text>
+        <view class="service-item service-coral" @click="goToThemeSettings">
+          <view class="service-icon">
+            <image class="icon-svg" src="/static/images/ui-gear.svg" mode="aspectFit" />
+          </view>
+          <text>主题外观</text>
+        </view>
+        <view class="service-item service-lavender" @click="goToSettings">
+          <view class="service-icon">
+            <image class="icon-svg" src="/static/images/nav-profile.svg" mode="aspectFit" />
+          </view>
+          <text>账号设置</text>
         </view>
       </view>
     </view>
 
-    <view class="quick-grid">
-      <view class="quick-item" @click="goToMyQuestions">
-        <text class="quick-icon">问</text>
-        <text class="quick-title">我的提问</text>
+    <view class="encourage-card prototype-card">
+      <view class="encourage-head">
+        <text class="prototype-section-title">今日能量</text>
+        <text class="encourage-tag">轻一点</text>
       </view>
-      <view class="quick-item" @click="goToMyAnswers">
-        <text class="quick-icon">答</text>
-        <text class="quick-title">我的回答</text>
-      </view>
-      <view class="quick-item" @click="goToVip">
-        <text class="quick-icon">会</text>
-        <text class="quick-title">会员中心</text>
-      </view>
-      <view class="quick-item" @click="contactCustomerService">
-        <text class="quick-icon">服</text>
-        <text class="quick-title">联系客服</text>
-      </view>
-    </view>
-
-    <view class="menu-section">
-      <view class="section-head">
-        <text class="section-title">常用功能</text>
-        <text class="section-subtitle">把常去的入口放在一起，查找会更顺手。</text>
-      </view>
-
-      <view class="menu-list">
-        <view class="menu-item" @click="goToMyQuestions">
-          <view class="item-left">
-            <view class="icon-box">问</view>
-            <text class="text">查看我的提问</text>
-          </view>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @click="goToMyAnswers">
-          <view class="item-left">
-            <view class="icon-box">答</view>
-            <text class="text">查看我的回答</text>
-          </view>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @click="contactCustomerService">
-          <view class="item-left">
-            <view class="icon-box">服</view>
-            <text class="text">联系人工客服</text>
-          </view>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @click="goToAgent">
-          <view class="item-left">
-            <view class="icon-box agent-box">AI</view>
-            <text class="text">智能 Agent 助手</text>
-          </view>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @click="goToSettings">
-          <view class="item-left">
-            <view class="icon-box settings-box">设</view>
-            <text class="text">设置</text>
-          </view>
-          <text class="menu-meta">{{ themeLabel }}</text>
+      <view class="energy-grid">
+        <view v-for="item in encouragementItems" :key="item.title" class="energy-chip" :class="item.tone">
+          <text>{{ item.title }}</text>
         </view>
       </view>
     </view>
-
     <AppTabBar />
   </view>
 </template>
@@ -108,18 +91,20 @@ import { onShow } from "@dcloudio/uni-app";
 import { computed, onMounted, ref } from "vue";
 import { userApi } from "@/api/user";
 import { BASE_URL } from "@/api/config";
-import { getStoredTheme, syncThemeUi, themeOptions } from "@/utils/theme";
 import AppTabBar from "@/components/AppTabBar.vue";
 
 const userInfo = ref({});
-const currentTheme = ref(getStoredTheme());
+const questionCount = ref(12);
+const answerCount = ref(28);
 
-const normalizeAvatarUrl = (avatar) => {
+const encouragementItems = [
+  { title: "慢慢来", tone: "mint" },
+  { title: "先完成一点", tone: "coral" },
+  { title: "今天也不错", tone: "lavender" },
+];const normalizeAvatarUrl = (avatar) => {
   if (!avatar) return "";
-  if (avatar.startsWith("http://") || avatar.startsWith("https://")) {
-    return avatar;
-  }
-  return `${BASE_URL}${avatar}`;
+  if (avatar.startsWith("http://") || avatar.startsWith("https://")) return avatar;
+  return avatar.startsWith("/") ? `${BASE_URL}${avatar}` : `${BASE_URL}/${avatar}`;
 };
 
 const normalizeUserInfo = (data = {}) => ({
@@ -127,303 +112,419 @@ const normalizeUserInfo = (data = {}) => ({
   avatar: normalizeAvatarUrl(data.avatar),
 });
 
-const displayName = computed(
-  () => userInfo.value.name || userInfo.value.account || "可爱提问者"
-);
+const avatarSrc = computed(() => userInfo.value.avatar || "/static/default-avatar.webp");
+const displayName = computed(() => userInfo.value.name || userInfo.value.nickname || userInfo.value.account || "MyQA 用户");
+const displayUserId = computed(() => userInfo.value.userId || "123456");
+const displayLevel = computed(() => userInfo.value.level || 4);
 
-const themeLabel = computed(() => {
-  const matched = themeOptions.find((item) => item.value === currentTheme.value);
-  return matched ? matched.label : "暖杏浅色";
-});
+const loadStoredUserInfo = () => {
+  const stored = uni.getStorageSync("userInfo");
+  if (!stored) {
+    userInfo.value = {};
+    return;
+  }
 
-onMounted(() => {
-  const storedUserInfo = uni.getStorageSync("userInfo");
-  userInfo.value = storedUserInfo ? normalizeUserInfo(storedUserInfo) : {};
-});
+  try {
+    userInfo.value = normalizeUserInfo(typeof stored === "string" ? JSON.parse(stored) : stored);
+  } catch (error) {
+    userInfo.value = {};
+  }
+};
 
-onShow(() => {
-  fetchLatestUserInfo();
-});
+const extractTotal = (payload) => {
+  const data = payload?.data || payload || {};
+  if (typeof data.total === "number") return data.total;
+  if (Array.isArray(data.list)) return data.list.length;
+  return 0;
+};
 
 const fetchLatestUserInfo = async () => {
   try {
     const res = await userApi.getUserInfo();
-    userInfo.value = normalizeUserInfo(res.data);
-    uni.setStorageSync("userInfo", res.data);
+    userInfo.value = normalizeUserInfo(res.data || {});
+    uni.setStorageSync("userInfo", res.data || {});
   } catch (error) {
     console.error("获取用户信息失败:", error);
   }
 };
 
+const fetchProfileStats = async () => {
+  try {
+    const [questions, answers] = await Promise.all([userApi.getMyQuestions(), userApi.getMyAnswers()]);
+    questionCount.value = extractTotal(questions) || questionCount.value;
+    answerCount.value = extractTotal(answers) || answerCount.value;
+  } catch (error) {
+    console.error("获取个人统计失败:", error);
+  }
+};
+
 const goToMyQuestions = () => {
-  uni.navigateTo({
-    url: "/pages/profile/my-questions",
-  });
+  uni.navigateTo({ url: "/pages/profile/my-questions" });
 };
 
 const goToMyAnswers = () => {
-  uni.navigateTo({
-    url: "/pages/profile/my-answers",
-  });
+  uni.navigateTo({ url: "/pages/profile/my-answers" });
 };
 
 const goToVip = () => {
-  uni.navigateTo({
-    url: "/pages/profile/vip",
-  });
+  uni.navigateTo({ url: "/pages/profile/vip" });
 };
 
 const goToUserDetail = () => {
   if (!userInfo.value.userId) return;
-
-  uni.navigateTo({
-    url: `/pages/profile/user-detail?userId=${userInfo.value.userId}`,
-  });
+  uni.navigateTo({ url: `/pages/profile/user-detail?userId=${userInfo.value.userId}` });
 };
 
 const goToSettings = () => {
-  uni.navigateTo({
-    url: "/pages/profile/settings",
-  });
+  uni.navigateTo({ url: "/pages/profile/settings" });
+};
+const goToThemeSettings = () => {
+  uni.navigateTo({ url: "/pages/profile/theme-settings" });
 };
 
-const goToAgent = () => {
-  // Agent 助手是独立功能页，不和原客服聊天耦合，方便展示多步规划和工具调用能力。
-  uni.navigateTo({
-    url: "/pages/agent/index",
-  });
+const goToMessage = () => {
+  uni.reLaunch({ url: "/pages/message/index" });
 };
 
 const contactCustomerService = () => {
-  if (!userInfo.value.userId) return;
+  if (!userInfo.value.userId) {
+    uni.navigateTo({ url: "/pages/customer-service/index" });
+    return;
+  }
 
-  uni.navigateTo({
-    url: `/pages/customer-service/chat?customerId=${userInfo.value.userId}`,
-  });
+  uni.navigateTo({ url: `/pages/customer-service/chat?customerId=${userInfo.value.userId}` });
 };
+
+onMounted(() => {
+  loadStoredUserInfo();
+});
+
+onShow(() => {
+  fetchLatestUserInfo();
+  fetchProfileStats();
+});
 </script>
 
 <style lang="scss" scoped>
 .profile-page {
   min-height: 100vh;
-  padding: 28rpx 24rpx 190rpx;
-  background: var(--app-page-bg);
-  background-color: var(--app-page-bg-color, #fff9f6);
+  padding: 22rpx 24rpx 190rpx;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at top left, rgba(255, 198, 156, 0.26), transparent 32%),
+    radial-gradient(circle at top right, rgba(255, 133, 163, 0.18), transparent 26%),
+    linear-gradient(180deg, #fff9f6 0%, #fff3ef 56%, #fffaf8 100%) !important;
+  background-color: #fff9f6 !important;
+  color: var(--qa-ink, #2b2528);
 }
 
-.hero-card {
-  position: relative;
-  padding: 34rpx 28rpx 30rpx;
-  border-radius: 34rpx;
-  background: var(--app-hero-overlay), var(--app-hero-gradient);
-  border: 1rpx solid var(--app-card-border);
-  color: var(--app-hero-text);
-  box-shadow: var(--app-shadow-soft);
+.topbar-spacer {
+  width: 76rpx;
+  height: 76rpx;
 }
 
-.hero-actions {
+.profile-card {
+  margin-top: 26rpx;
+  padding: 34rpx 28rpx;
   display: flex;
-  justify-content: flex-end;
-  gap: 14rpx;
-  margin-bottom: 22rpx;
-}
-
-.hero-pill {
-  padding: 10rpx 22rpx;
-  border-radius: 999rpx;
-  background: var(--app-surface-alt);
-  border: 1rpx solid var(--app-card-border);
-  color: var(--app-hero-text);
-  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
-  font-size: 22rpx;
-  font-weight: 600;
-}
-
-.settings-pill {
-  background: var(--app-surface-alt);
-  background: color-mix(in srgb, var(--app-surface-alt) 92%, #ffffff);
-}
-
-.hero-top {
-  display: flex;
-  gap: 20rpx;
   align-items: center;
+  gap: 22rpx;
 }
 
-.avatar {
-  width: 124rpx;
-  height: 124rpx;
-  border-radius: 34rpx;
-  border: 4rpx solid var(--app-card-border);
+.profile-avatar {
+  width: 118rpx;
+  height: 118rpx;
+  flex: 0 0 118rpx;
+  border: 3rpx solid var(--qa-ink, #2b2528);
+  border-radius: 50%;
+  background: #d9caff;
 }
 
-.hero-copy {
+.profile-main {
+  min-width: 0;
   flex: 1;
 }
 
-.nickname {
-  display: block;
-  font-size: 36rpx;
-  font-weight: 700;
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
 }
 
-.account {
+.profile-name,
+.profile-id,
+.profile-desc,
+.level-pill,
+.card-arrow {
   display: block;
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: var(--app-hero-text);
-  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
-  opacity: 1;
 }
 
-.intro {
-  display: block;
-  margin-top: 16rpx;
+.profile-name {
+  max-width: 260rpx;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 31rpx;
+  font-weight: 900;
+}
+
+.level-pill {
+  padding: 5rpx 12rpx;
+  border: 2rpx solid rgba(43, 37, 40, 0.2);
+  border-radius: 999rpx;
+  background: #ffe9a8;
+  font-size: 19rpx;
+  font-weight: 900;
+}
+
+.profile-id {
+  margin-top: 10rpx;
+  color: var(--qa-muted, #7e7578);
   font-size: 22rpx;
-  line-height: 1.7;
-  color: var(--app-hero-text);
-  color: color-mix(in srgb, var(--app-hero-text) 84%, #ffffff);
-  opacity: 1;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16rpx;
-  margin-top: 26rpx;
-}
-
-.stat-card {
-  padding: 22rpx 18rpx;
-  border-radius: 24rpx;
-  background: var(--app-surface-alt);
-  border: 1rpx solid var(--app-card-border);
-  text-align: center;
-  backdrop-filter: blur(12rpx);
-}
-
-.stat-value {
-  display: block;
-  font-size: 28rpx;
   font-weight: 700;
+}
+
+.profile-desc {
+  margin-top: 8rpx;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--qa-soft-text, #6f686b);
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.card-arrow {
+  color: var(--qa-ink, #2b2528);
+  font-size: 52rpx;
+  line-height: 1;
+}
+
+.stats-card {
+  margin-top: 24rpx;
+  padding: 30rpx 16rpx;
+  display: grid;
+  grid-template-columns: 1fr 2rpx 1fr 2rpx 1fr;
+  align-items: center;
+}
+
+.stat-cell {
+  min-width: 0;
+  text-align: center;
+}
+
+.stat-label,
+.stat-value,
+.vip-value {
+  display: block;
 }
 
 .stat-label {
-  display: block;
+  color: var(--qa-soft-text, #6f686b);
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.stat-value,
+.vip-value {
   margin-top: 10rpx;
-  font-size: 22rpx;
-  color: var(--app-hero-text);
-  color: color-mix(in srgb, var(--app-hero-text) 80%, #ffffff);
-  opacity: 1;
+  font-size: 36rpx;
+  font-weight: 950;
 }
 
-.quick-grid {
+.vip-value {
+  color: #ff655a;
+  font-size: 33rpx;
+}
+
+.stat-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background: rgba(43, 37, 40, 0.18);
+}
+
+.service-card {
+  margin-top: 24rpx;
+  padding: 30rpx 26rpx;
+}
+
+.service-grid {
+  margin-top: 24rpx;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16rpx;
-  margin-top: 22rpx;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
 }
 
-.quick-item {
-  padding: 24rpx 14rpx;
-  border-radius: 28rpx;
-  background: var(--app-surface);
-  box-shadow: var(--app-shadow-card);
+.service-item {
+  min-height: 144rpx;
+  border-radius: 20rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
+  justify-content: center;
+  gap: 14rpx;
+  font-size: 24rpx;
+  font-weight: 900;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.quick-icon,
-.icon-box {
-  width: 54rpx;
-  height: 54rpx;
-  border-radius: 18rpx;
-  background: var(--app-accent-soft);
-  color: var(--app-accent-strong);
+.service-item:active,
+.order-item:active,
+.profile-card:active,
+.stat-cell:active {
+  transform: scale(0.97);
+}
+
+.service-mint {
+  background: #c8efd8;
+}
+
+.service-coral {
+  background: #ffd5cd;
+}
+
+.service-lavender {
+  background: #e6daf5;
+}
+
+.service-icon,
+.order-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
-  font-weight: 700;
 }
 
-.settings-box {
-  background: var(--app-success-bg);
-  color: var(--app-success-text);
+.service-icon {
+  width: 58rpx;
+  height: 58rpx;
+  animation: prototypeIconFloat 3s ease-in-out infinite;
 }
 
-.agent-box {
-  background: rgba(15, 118, 110, 0.12);
-  color: #0f766e;
-}
-
-.quick-title {
-  margin-top: 14rpx;
-  font-size: 22rpx;
-  color: var(--app-ink-soft);
-}
-
-.menu-section {
-  margin-top: 22rpx;
-  padding: 28rpx;
-  border-radius: 30rpx;
-  background: var(--app-surface);
-  box-shadow: var(--app-shadow-card);
-}
-
-.section-head {
-  margin-bottom: 18rpx;
-}
-
-.section-title {
-  display: block;
-  font-size: 30rpx;
-  font-weight: 600;
-  color: var(--app-ink);
-}
-
-.section-subtitle {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 22rpx;
-  color: var(--app-ink-muted);
-}
-
-.menu-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14rpx;
-}
-
-.menu-item {
+.order-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid var(--app-line);
 }
 
-.menu-item:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
-}
-
-.item-left {
+.order-all {
   display: flex;
   align-items: center;
+  gap: 4rpx;
+  color: var(--qa-soft-text, #6f686b);
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.tiny-arrow {
+  font-size: 34rpx;
+  line-height: 1;
+}
+
+.order-grid {
+  margin-top: 26rpx;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12rpx;
+}
+
+.order-item {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  color: var(--qa-ink, #2b2528);
+  font-size: 22rpx;
+  font-weight: 800;
+  transition: transform 0.18s ease;
+}
+
+.order-icon {
+  width: 60rpx;
+  height: 60rpx;
+  border: 3rpx solid var(--qa-ink, #2b2528);
+  border-radius: 50%;
+  background: rgba(255, 253, 246, 0.7);
+}
+
+.order-icon .icon-svg {
+  width: 33rpx;
+  height: 33rpx;
+}
+
+
+.encourage-card {
+  margin-top: 24rpx;
+  padding: 30rpx 26rpx;
+}
+
+.encourage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 16rpx;
 }
 
-.text {
-  font-size: 28rpx;
-  color: var(--app-ink);
+.encourage-tag {
+  flex: 0 0 auto;
+  padding: 8rpx 16rpx;
+  border: 2rpx solid rgba(43, 37, 40, 0.18);
+  border-radius: 999rpx;
+  background: #ffe9a8;
+  color: var(--qa-ink, #2b2528);
+  font-size: 21rpx;
+  font-weight: 900;
 }
 
-.arrow,
-.menu-meta {
-  font-size: 24rpx;
-  color: var(--app-ink-muted);
+.energy-grid {
+  margin-top: 20rpx;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14rpx;
+}
+
+.energy-chip {
+  min-height: 74rpx;
+  border: 2rpx solid rgba(43, 37, 40, 0.18);
+  border-radius: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10rpx;
+  color: var(--qa-ink, #2b2528);
+  font-size: 22rpx;
+  font-weight: 900;
+  text-align: center;
+}
+
+.energy-chip.mint {
+  background: rgba(169, 220, 194, 0.64);
+}
+
+.energy-chip.coral {
+  background: rgba(244, 154, 145, 0.42);
+}
+
+.energy-chip.lavender {
+  background: rgba(205, 180, 219, 0.52);
+}
+
+.theme-dark.profile-page {
+  min-height: 100vh;
+  padding: 22rpx 24rpx 190rpx;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at top left, rgba(255, 198, 156, 0.26), transparent 32%),
+    radial-gradient(circle at top right, rgba(255, 133, 163, 0.18), transparent 26%),
+    linear-gradient(180deg, #fff9f6 0%, #fff3ef 56%, #fffaf8 100%) !important;
+  background-color: #fff9f6 !important;
+  color: var(--qa-ink, #2b2528);
+}
+
+.theme-dark .profile-card,
+.theme-dark .stats-card,
+.theme-dark .service-card,
+.theme-dark .encourage-card {
+  background: rgba(41, 35, 47, 0.92);
 }
 </style>

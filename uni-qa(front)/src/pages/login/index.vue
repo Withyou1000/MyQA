@@ -1,5 +1,6 @@
 <template>
-  <view :class="['login-page', themePageClass]">
+  <view :class="['login-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="登录" tone="coral" :show-back="false" />
     <view class="decor decor-left" />
     <view class="decor decor-right" />
 
@@ -177,8 +178,12 @@ const goToRegister = () => {
   padding: 34rpx 248rpx 34rpx 30rpx;
   border-radius: var(--app-radius-xl);
   background: var(--app-hero-overlay), var(--app-hero-gradient);
-  border: 1rpx solid var(--app-card-border);
+  border: 0;
   box-shadow: var(--app-shadow-card);
+}
+
+.login-page .hero-card::after {
+  display: none !important;
 }
 
 .hero-copy {
@@ -213,11 +218,11 @@ const goToRegister = () => {
 
 .logo {
   position: absolute;
-  top: 50%;
+  top: 40%;
   right: 20rpx;
   transform: translateY(-50%);
-  width: 250rpx;
-  height: 250rpx;
+  width: 230rpx;
+  height: 230rpx;
   padding: 0;
   border-radius: 0;
   background: transparent;
@@ -231,7 +236,7 @@ const goToRegister = () => {
   padding: 34rpx 30rpx 40rpx;
   border-radius: var(--app-radius-xl);
   background: var(--app-surface);
-  border: 1rpx solid var(--app-card-border);
+  border: 0;
   box-shadow: var(--app-shadow-card);
   backdrop-filter: blur(18rpx);
 }
@@ -270,11 +275,12 @@ const goToRegister = () => {
   height: 96rpx;
   padding: 0 28rpx;
   background: var(--app-input-bg);
-  border: 2rpx solid var(--app-line);
+  border: 0;
   border-radius: 26rpx;
+  box-sizing: border-box;
   font-size: 30rpx;
   color: var(--app-ink);
-  box-shadow: inset 0 2rpx 6rpx rgba(255, 255, 255, 0.45);
+  box-shadow: none;
 }
 
 .login-btn {

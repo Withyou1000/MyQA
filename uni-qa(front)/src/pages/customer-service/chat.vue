@@ -1,5 +1,6 @@
 <template>
-  <view :class="['chat-page', themePageClass]">
+  <view :class="['chat-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="客服会话" tone="yellow" />
     <uni-popup ref="transactionPopup" type="bottom" :mask-click="true">
       <view class="transaction-popup">
         <view class="transaction-sheet">

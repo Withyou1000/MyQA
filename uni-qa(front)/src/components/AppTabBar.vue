@@ -1,18 +1,16 @@
 <template>
-  <view class="tab-shell" :style="shellStyle">
+  <view :class="['tab-shell', themePageClass]" :style="shellStyle">
     <view class="tab-bar">
       <view
         v-for="item in tabs"
         :key="item.path"
         class="tab-item"
-        :class="{ active: currentPath === item.path }"
+        :class="{ active: currentPath === item.path, agent: item.agent }"
         @click="handleTabClick(item.path)"
       >
-        <image
-          class="tab-icon"
-          :src="currentPath === item.path ? item.activeIcon : item.icon"
-          mode="aspectFit"
-        />
+        <view class="tab-icon-wrap">
+          <image class="tab-icon" :src="item.icon" mode="aspectFit" />
+        </view>
         <text class="tab-text">{{ item.text }}</text>
       </view>
     </view>
@@ -30,26 +28,28 @@ const tabs = [
   {
     text: "问答",
     path: "/pages/index/index",
-    icon: "/static/images/tab-question.svg",
-    activeIcon: "/static/images/tab-question-active.svg",
+    icon: "/static/images/nav-question.svg",
   },
   {
     text: "提问",
     path: "/pages/ask/index",
-    icon: "/static/images/tab-ask.svg",
-    activeIcon: "/static/images/tab-ask-active.svg",
+    icon: "/static/images/nav-ask.svg",
+  },
+  {
+    text: "Agent",
+    path: "/pages/agent/index",
+    icon: "/static/images/nav-agent.svg",
+    agent: true,
   },
   {
     text: "消息",
     path: "/pages/message/index",
-    icon: "/static/images/tab-message.svg",
-    activeIcon: "/static/images/tab-message-active.svg",
+    icon: "/static/images/nav-message.svg",
   },
   {
     text: "我的",
     path: "/pages/profile/index",
-    icon: "/static/images/tab-profile.svg",
-    activeIcon: "/static/images/tab-profile-active.svg",
+    icon: "/static/images/nav-profile.svg",
   },
 ];
 
@@ -57,10 +57,12 @@ const shellStyle = computed(() => ({
   paddingBottom: `${safeAreaBottom.value}px`,
 }));
 
+const normalizePath = (path = "") => `/${path}`.replace(/\/+$/, "");
+
 const updateCurrentPath = () => {
   const pages = getCurrentPages();
   if (!pages.length) return;
-  currentPath.value = `/${pages[pages.length - 1].route}`;
+  currentPath.value = normalizePath(pages[pages.length - 1].route);
 };
 
 const updateSafeArea = () => {
@@ -90,65 +92,112 @@ onShow(() => {
 <style lang="scss" scoped>
 .tab-shell {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 20rpx;
+  right: 20rpx;
+  bottom: 18rpx;
   z-index: 120;
-  background: #fff8f5;
-  border-top: 1rpx solid rgba(255, 150, 167, 0.18);
-  box-shadow: 0 -8rpx 24rpx rgba(222, 146, 128, 0.08);
   pointer-events: auto;
 }
 
 .tab-bar {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   align-items: center;
-  justify-content: space-around;
-  min-height: 110rpx;
-  padding: 10rpx 0 6rpx;
-}
-
-.theme-dark .tab-shell {
-  background: #1b1822;
-  border-top-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 -8rpx 24rpx rgba(10, 8, 15, 0.18);
-}
-
-.theme-ink .tab-shell {
-  background: #eef4f1;
-  border-top-color: rgba(134, 145, 149, 0.16);
-  box-shadow: 0 -8rpx 24rpx rgba(88, 108, 111, 0.08);
+  min-height: 124rpx;
+  padding: 16rpx 10rpx 10rpx;
+  border: 3rpx solid var(--qa-ink, #2b2528);
+  border-radius: 38rpx;
+  background: rgba(255, 253, 246, 0.94);
+  box-shadow: 8rpx 9rpx 0 rgba(43, 37, 40, 0.1);
+  backdrop-filter: blur(16rpx);
 }
 
 .tab-item {
-  flex: 1;
   min-width: 0;
   height: 92rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4rpx;
-  color: var(--app-ink-muted);
-  transition: color 0.2s ease, transform 0.2s ease;
+  gap: 8rpx;
+  color: var(--qa-muted, #80757a);
+  transition: transform 0.18s ease, color 0.18s ease;
 }
 
-.tab-item.active {
-  color: var(--app-accent-strong);
+.tab-icon-wrap {
+  width: 50rpx;
+  height: 50rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
 }
 
 .tab-icon {
-  width: 46rpx;
-  height: 46rpx;
+  width: 34rpx;
+  height: 34rpx;
+  transition: transform 0.22s ease;
 }
 
 .tab-text {
+  max-width: 100%;
   font-size: 20rpx;
   line-height: 1;
-  font-weight: 500;
+  font-weight: 800;
+  color: inherit;
 }
 
-.tab-item.active .tab-text {
-  font-weight: 600;
+.tab-item.active {
+  color: var(--qa-ink, #2b2528);
 }
+
+.tab-item.active .tab-icon-wrap {
+  background: var(--qa-mint, #a9dcc2);
+  box-shadow: inset 0 0 0 2rpx rgba(43, 37, 40, 0.08);
+}
+
+
+.tab-item.agent .tab-icon-wrap {
+  width: 62rpx;
+  height: 62rpx;
+  border: 3rpx solid var(--qa-ink, #2b2528);
+  border-radius: 22rpx;
+  background: var(--qa-yellow, #ffd15d);
+  box-shadow: 4rpx 5rpx 0 rgba(43, 37, 40, 0.12);
+}
+
+.tab-item.agent .tab-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.tab-item.agent.active .tab-icon-wrap {
+  background: var(--qa-coral, #f49a91);
+  transform: translateY(-2rpx);
+}
+.tab-item:active {
+  transform: translateY(2rpx) scale(0.98);
+}
+
+
+.tab-item:active .tab-icon {
+  transform: rotate(-8deg) scale(1.08);
+}
+
+.theme-dark .tab-bar {
+  background: rgba(34, 29, 40, 0.94);
+  border-color: rgba(255, 241, 219, 0.78);
+  box-shadow: 8rpx 9rpx 0 rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .tab-item {
+  color: #cfc5d2;
+}
+
+.theme-ink .tab-bar {
+  background: rgba(247, 250, 247, 0.94);
+}
+
 </style>

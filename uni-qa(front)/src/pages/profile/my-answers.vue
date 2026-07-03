@@ -1,8 +1,9 @@
 <template>
-  <view :class="['my-answers-page', themePageClass]">
+  <view :class="['my-answers-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="我的回答" tone="coral" />
     <view class="hero-card">
       <view class="hero-copy">
-        <text class="hero-eyebrow">My Answers</text>
+        <text class="hero-eyebrow">回答记录</text>
         <text class="hero-title">我的回答</text>
         <text class="hero-desc">这里会记录你参与过的问题，也能快速回到聊天和详情。</text>
       </view>
@@ -12,24 +13,22 @@
       </view>
     </view>
 
-    <view class="summary-row" v-if="answers.length">
-      <view class="summary-pill">
-        <text class="summary-label">待处理</text>
-        <text class="summary-value">{{ getCountByStatus("pending") }}</text>
-      </view>
-      <view class="summary-pill">
-        <text class="summary-label">回答中</text>
-        <text class="summary-value">{{ getCountByStatus("answering") }}</text>
-      </view>
-      <view class="summary-pill">
-        <text class="summary-label">已完成</text>
-        <text class="summary-value">{{ getDoneCount() }}</text>
+    <view class="summary-row filter-row" v-if="answers.length">
+      <view
+        v-for="filter in statusFilters"
+        :key="filter.key"
+        class="summary-pill filter-pill"
+        :class="{ active: activeFilter === filter.key }"
+        @click="activeFilter = filter.key"
+      >
+        <text class="summary-label">{{ filter.label }}</text>
+        <text class="summary-value">{{ getFilterCount(filter) }}</text>
       </view>
     </view>
 
-    <view class="answer-list" v-if="answers.length">
+    <view class="answer-list" v-if="filteredAnswers.length">
       <view
-        v-for="answer in answers"
+        v-for="answer in filteredAnswers"
         :key="answer.id"
         class="answer-card"
         @click="goToQuestionDetail(answer.id)"
@@ -65,20 +64,38 @@
     </view>
 
     <view class="empty-card" v-else>
-      <text class="empty-title">还没有回答记录</text>
-      <text class="empty-desc">去看看社区里的问题吧，也许刚好有你能帮上的那一题。</text>
+      <text class="empty-title">{{ answers.length ? `暂无${activeFilterLabel}` : "还没有回答记录" }}</text>
+      <text class="empty-desc">{{ answers.length ? "换个分类看看。" : "去看看社区里的问题吧。" }}</text>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { userApi } from "@/api/user.js";
 import { onShow } from "@dcloudio/uni-app";
 
 const answers = ref([]);
 const userId = ref("");
+const activeFilter = ref("processing");
 
+const statusFilters = [
+  { key: "processing", label: "进行中", statuses: ["answering"] },
+  { key: "completed", label: "已完成", statuses: ["accepted", "rated", "refunded"] },
+  { key: "pending", label: "待处理", statuses: ["pending", "refused", "rejected"] },
+];
+
+const filteredAnswers = computed(() => {
+  const current = statusFilters.find((item) => item.key === activeFilter.value) || statusFilters[0];
+  return answers.value.filter((item) => current.statuses.includes(item.status));
+});
+
+const activeFilterLabel = computed(() => {
+  const current = statusFilters.find((item) => item.key === activeFilter.value);
+  return current?.label || "记录";
+});
+
+const getFilterCount = (filter) => answers.value.filter((item) => filter.statuses.includes(item.status)).length;
 const statusMap = {
   pending: "待处理",
   refused: "未接单",
@@ -97,11 +114,6 @@ const formatDate = (value) => {
     date.getDate()
   ).padStart(2, "0")}`;
 };
-
-const getCountByStatus = (status) => answers.value.filter((item) => item.status === status).length;
-
-const getDoneCount = () =>
-  answers.value.filter((item) => ["accepted", "rated"].includes(item.status)).length;
 
 const goToChat = async (answer) => {
   uni.navigateTo({
@@ -183,6 +195,10 @@ onMounted(() => {
   border: 1rpx solid var(--app-card-border);
   color: var(--app-hero-text);
   box-shadow: var(--app-shadow-soft);
+}
+
+.my-answers-page .hero-card::after {
+  display: none !important;
 }
 
 .hero-copy {
@@ -270,6 +286,15 @@ onMounted(() => {
   font-size: 34rpx;
   font-weight: 700;
   color: var(--app-ink);
+}
+.filter-pill {
+  border: 2rpx solid rgba(43, 37, 40, 0.16);
+}
+
+.filter-pill.active {
+  border-color: var(--qa-ink, #2b2528);
+  background: var(--qa-yellow, #ffd15d);
+  box-shadow: 4rpx 5rpx 0 rgba(43, 37, 40, 0.1);
 }
 
 .answer-list {

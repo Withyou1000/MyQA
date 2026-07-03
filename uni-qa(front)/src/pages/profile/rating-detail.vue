@@ -1,5 +1,6 @@
 <template>
-  <view :class="['rating-detail-page', themePageClass]">
+  <view :class="['rating-detail-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="评价详情" tone="lavender" />
     <view v-if="loading" class="state-card">
       <text class="state-title">正在加载评价详情</text>
       <text class="state-desc">稍等一下，正在同步这条评价内容。</text>
@@ -8,7 +9,7 @@
     <template v-else>
       <view class="hero-card">
         <view class="hero-copy">
-          <text class="hero-eyebrow">Rating Detail</text>
+          <text class="hero-eyebrow">评价记录</text>
           <text class="hero-title">查看评价</text>
           <text class="hero-desc">
             这里会展示这次合作留下的评分、评价内容和补充图片。
@@ -326,5 +327,43 @@ onLoad((options) => {
   font-size: 24rpx;
   line-height: 1.7;
   color: var(--app-ink-muted);
+}
+
+/* rating detail page polish */
+.rating-detail-page .hero-card::after {
+  display: none !important;
+}
+
+.rating-detail-page .hero-card,
+.rating-detail-page .panel-card,
+.rating-detail-page .state-card {
+  border-radius: 28rpx !important;
+  box-shadow: 0 16rpx 40rpx rgba(43, 37, 40, 0.08) !important;
+}
+
+.rating-detail-page .score-card,
+.rating-detail-page .content-card,
+.rating-detail-page .rating-image {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.rating-detail-page .score-card,
+.rating-detail-page .content-card {
+  background: rgba(255, 249, 241, 0.82) !important;
+}
+
+.rating-detail-page .hero-badge {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.rating-detail-page .score-text {
+  color: var(--app-ink-soft) !important;
+}
+
+.rating-detail-page .rating-image {
+  border-radius: 20rpx !important;
+  background: rgba(255, 255, 255, 0.74) !important;
 }
 </style>

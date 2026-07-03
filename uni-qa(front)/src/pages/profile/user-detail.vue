@@ -1,5 +1,6 @@
 <template>
-  <view :class="['user-detail-page', themePageClass]">
+  <view :class="['user-detail-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="用户主页" tone="lavender" />
     <view class="hero-card">
       <view class="hero-top">
         <image class="avatar" :src="userAvatar" mode="aspectFill" />
@@ -200,6 +201,11 @@ onLoad((options) => {
   color: var(--app-hero-text);
   box-shadow: var(--app-shadow-soft);
 }
+
+.user-detail-page .hero-card::after {
+  display: none !important;
+}
+
 
 .hero-top {
   display: flex;

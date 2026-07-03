@@ -1,5 +1,5 @@
 ﻿const { createStructuredReply } = require('../ai/services/aiClient');
-const { normalizeMemoryPatch } = require('./agentMemoryExtractor');
+const { normalizeMemoryPatch } = require('./agentMemoryPatchNormalizer');
 const {
   classifyAgentGoalByRule,
   finalizeRoute
@@ -134,3 +134,4 @@ async function analyzeAgentInput(goal, memory) {
 module.exports = {
   analyzeAgentInput
 };
+

@@ -1,5 +1,6 @@
 <template>
-  <view :class="['detail-page', themePageClass]">
+  <view :class="['detail-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="问题详情" tone="mint" />
     <view class="question-card">
       <view class="question-header">
         <view class="author-info">
@@ -419,5 +420,170 @@ onLoad((options) => {
 
 .answer-btn[disabled] {
   opacity: 0.72;
+}
+
+/* detail page regenerated layout */
+.detail-page {
+  padding: 24rpx 24rpx 168rpx !important;
+  background: var(--app-page-bg) !important;
+}
+
+.detail-page .question-card {
+  padding: 30rpx 28rpx 34rpx !important;
+  border: 0 !important;
+  border-radius: 28rpx !important;
+  background: rgba(255, 253, 246, 0.96) !important;
+  box-shadow: 0 18rpx 48rpx rgba(43, 37, 40, 0.08) !important;
+  overflow: hidden;
+}
+
+.detail-page .question-header {
+  align-items: flex-start !important;
+  margin-bottom: 26rpx !important;
+}
+
+.detail-page .author-info {
+  gap: 18rpx !important;
+  flex: 1;
+}
+
+.detail-page .author-avatar-image,
+.detail-page .author-avatar {
+  width: 86rpx !important;
+  height: 86rpx !important;
+  border-radius: 50% !important;
+  border: 2rpx solid rgba(43, 37, 40, 0.12) !important;
+  box-shadow: none !important;
+}
+
+.detail-page .author-name {
+  font-size: 32rpx !important;
+  line-height: 1.2 !important;
+  color: var(--app-ink) !important;
+}
+
+.detail-page .post-time {
+  margin-top: 10rpx !important;
+  font-size: 24rpx !important;
+  color: var(--app-ink-muted) !important;
+}
+
+.detail-page .category-badge {
+  padding: 12rpx 24rpx !important;
+  border: 1rpx solid rgba(42, 126, 76, 0.18) !important;
+  border-radius: 999rpx !important;
+  background: rgba(209, 238, 218, 0.9) !important;
+  box-shadow: none !important;
+  color: var(--app-ink) !important;
+  font-size: 24rpx !important;
+  font-weight: 700 !important;
+}
+
+.detail-page .title {
+  margin: 4rpx 0 22rpx !important;
+  font-size: 42rpx !important;
+  line-height: 1.35 !important;
+  font-weight: 800 !important;
+  color: var(--app-ink) !important;
+}
+
+.detail-page .tags-container {
+  gap: 14rpx !important;
+  margin-bottom: 26rpx !important;
+}
+
+.detail-page .tag {
+  padding: 10rpx 22rpx !important;
+  border: 1rpx solid rgba(42, 126, 76, 0.16) !important;
+  border-radius: 999rpx !important;
+  background: rgba(209, 238, 218, 0.86) !important;
+  box-shadow: none !important;
+  color: var(--app-ink) !important;
+  font-size: 24rpx !important;
+  font-weight: 700 !important;
+}
+
+.detail-page .reward-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 18rpx !important;
+  width: auto !important;
+  min-height: 104rpx !important;
+  margin: 4rpx 0 28rpx !important;
+  padding: 20rpx 24rpx !important;
+  border: 1rpx solid rgba(230, 132, 79, 0.22) !important;
+  border-radius: 24rpx !important;
+  background: linear-gradient(135deg, rgba(255, 238, 226, 0.95), rgba(255, 247, 236, 0.95)) !important;
+  box-shadow: none !important;
+}
+
+.detail-page .reward-icon {
+  width: 60rpx !important;
+  height: 60rpx !important;
+  border: 0 !important;
+  border-radius: 18rpx !important;
+  background: rgba(229, 142, 35, 0.16) !important;
+  box-shadow: none !important;
+  color: #b96800 !important;
+  font-size: 28rpx !important;
+}
+
+.detail-page .reward-info {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  align-items: flex-start !important;
+}
+
+.detail-page .reward-text {
+  font-size: 24rpx !important;
+  color: #a36608 !important;
+  font-weight: 700 !important;
+}
+
+.detail-page .reward-amount {
+  margin-top: 4rpx !important;
+  font-size: 42rpx !important;
+  line-height: 1 !important;
+  color: #d17a00 !important;
+}
+
+.detail-page .question-content {
+  margin: 0 0 28rpx !important;
+  padding: 26rpx !important;
+  border: 0 !important;
+  border-radius: 24rpx !important;
+  background: rgba(255, 249, 241, 0.78) !important;
+  box-shadow: none !important;
+  color: var(--app-ink) !important;
+  font-size: 29rpx !important;
+  line-height: 1.75 !important;
+}
+
+.detail-page .image-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12rpx !important;
+}
+
+.detail-page .image-item {
+  border-radius: 18rpx !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.detail-page .answer-section {
+  padding: 18rpx 24rpx calc(24rpx + env(safe-area-inset-bottom)) !important;
+  border-top: 1rpx solid rgba(43, 37, 40, 0.08) !important;
+  background: rgba(255, 253, 246, 0.92) !important;
+  box-shadow: 0 -12rpx 36rpx rgba(43, 37, 40, 0.06) !important;
+}
+
+.detail-page .answer-btn {
+  height: 92rpx !important;
+  border: 0 !important;
+  border-radius: 999rpx !important;
+  box-shadow: var(--app-primary-shadow) !important;
 }
 </style>

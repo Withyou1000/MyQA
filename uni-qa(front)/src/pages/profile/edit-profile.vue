@@ -1,5 +1,6 @@
 <template>
-  <view :class="['edit-profile-container', themePageClass]">
+  <view :class="['edit-profile-container', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="编辑资料" tone="yellow" />
     <!-- 列表式编辑项 -->
     <view class="edit-list">
       <!-- 昵称 -->

@@ -1,5 +1,6 @@
 <template>
-  <view :class="['chat-page', themePageClass]">
+  <view :class="['chat-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="问答会话" tone="mint" />
     <uni-popup ref="popup" type="center" :mask-click="true">
       <view class="popup-container">
         <view class="popup-content">

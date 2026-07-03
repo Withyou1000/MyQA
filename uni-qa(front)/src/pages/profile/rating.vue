@@ -1,5 +1,6 @@
 <template>
-  <view :class="['rating-page', themePageClass]">
+  <view :class="['rating-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="提交评价" tone="coral" />
     <view class="hero-card">
       <view class="hero-copy">
         <text class="hero-eyebrow">Share Your Feelings</text>

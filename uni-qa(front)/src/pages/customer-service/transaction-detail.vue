@@ -1,5 +1,6 @@
 <template>
-  <view :class="['transaction-detail-page', themePageClass]">
+  <view :class="['transaction-detail-page', 'prototype-page', themePageClass]">
+    <PrototypeSubHeader title="交易详情" tone="coral" />
     <view v-if="loading" class="state-card">
       <text class="state-title">正在加载交易详情</text>
       <text class="state-desc">稍等一下，正在同步这笔问答交易的信息。</text>
@@ -8,7 +9,7 @@
     <template v-else>
       <view class="hero-card">
         <view class="hero-copy">
-          <text class="hero-eyebrow">Transaction Detail</text>
+          <text class="hero-eyebrow">交易记录</text>
           <text class="hero-title">交易详情</text>
           <text class="hero-desc">
             这里可以查看问题信息、双方聊天记录，以及关联的退款记录。
@@ -674,5 +675,70 @@ onLoad((options) => {
   line-height: 1.7;
   color: var(--app-ink-muted);
   text-align: center;
+}
+
+/* transaction detail page polish */
+.transaction-detail-page .hero-card::after {
+  display: none !important;
+}
+
+.transaction-detail-page .hero-card,
+.transaction-detail-page .panel-card,
+.transaction-detail-page .state-card {
+  border-radius: 28rpx !important;
+  box-shadow: 0 16rpx 40rpx rgba(43, 37, 40, 0.08) !important;
+}
+
+.transaction-detail-page .topic-chip,
+.transaction-detail-page .status-chip,
+.transaction-detail-page .refund-status,
+.transaction-detail-page .tag {
+  border: 0 !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.transaction-detail-page .topic-chip,
+.transaction-detail-page .tag {
+  background: rgba(209, 238, 218, 0.92) !important;
+  color: var(--app-ink) !important;
+}
+
+.transaction-detail-page .status-chip,
+.transaction-detail-page .refund-status.pending {
+  background: rgba(255, 233, 191, 0.96) !important;
+  color: #9a6200 !important;
+}
+
+.transaction-detail-page .refund-status.refunded {
+  background: rgba(213, 242, 223, 0.96) !important;
+  color: #257854 !important;
+}
+
+.transaction-detail-page .refund-status.rejected {
+  background: rgba(255, 224, 228, 0.96) !important;
+  color: #bf4f60 !important;
+}
+
+.transaction-detail-page .question-card,
+.transaction-detail-page .refund-card,
+.transaction-detail-page .participant-card,
+.transaction-detail-page .chat-bubble,
+.transaction-detail-page .system-bubble {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.transaction-detail-page .participant-card {
+  background: rgba(255, 255, 255, 0.54) !important;
+}
+
+.transaction-detail-page .chat-bubble {
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+.transaction-detail-page .role-answerer .chat-bubble,
+.transaction-detail-page .system-bubble {
+  background: var(--app-primary-gradient) !important;
 }
 </style>

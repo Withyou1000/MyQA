@@ -567,7 +567,7 @@ async function attachMemoryStartTrace({ trace, userId, memoryViews }) {
 
 /**
  * 完成 Memory 2.0 收尾。
- * 这里统一写 Policy 决策、Ledger 事件并刷新 Views。
+ * 这里先记录 Policy 决策；只有长期记忆或工具成功事实真的改变了 Views，才追加 view_refresh。
  */
 async function finalizeMemoryCycle({
   trace,
@@ -594,7 +594,13 @@ async function finalizeMemoryCycle({
     summary: policyDecision.reason
   });
 
-  if (plannerResult && trace.status === 'completed') {
+  const hasSuccessfulToolChain = Boolean(
+    plannerResult
+    && trace.status === 'completed'
+    && (plannerResult.toolSteps || []).length
+  );
+
+  if (hasSuccessfulToolChain) {
     await recordToolSuccess({
       userId,
       runId: trace._id,
@@ -602,6 +608,10 @@ async function finalizeMemoryCycle({
       toolResults
     });
   }
+
+  // memory_ignore 和 memory_read 不会改变当前 Views；跳过刷新可以避免 Ledger 被无意义的 view_refresh 淹没。
+  const shouldRefreshViews = Boolean(policyDecision.shouldWrite || hasSuccessfulToolChain);
+  if (!shouldRefreshViews) return;
 
   const refreshedViews = await refreshMemoryViews(userId);
   trace.steps.push({
@@ -612,7 +622,7 @@ async function finalizeMemoryCycle({
       timelineCount: refreshedViews.timelineView?.length || 0,
       toolSuccessCount: refreshedViews.toolSuccessView?.length || 0
     },
-    summary: 'Ledger 更新后，系统刷新了给 Planner 使用的当前记忆视图。'
+    summary: '长期记忆或工具成功事实发生变化，系统刷新当前 Memory Views。'
   });
 }
 
@@ -928,6 +938,7 @@ module.exports = {
   runAgentTask,
   confirmAgentAction
 };
+
 
 
 
